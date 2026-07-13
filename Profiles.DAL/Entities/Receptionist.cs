@@ -6,5 +6,4 @@ public class Receptionist
     public Guid AccountId { get; set; }
     public Account? Account { get; set; }
     public Guid? OfficeId { get; set; }        
-    
 }
