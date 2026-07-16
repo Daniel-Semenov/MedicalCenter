@@ -1,0 +1,133 @@
+﻿using Authorization.Application.DTO_s;
+using Authorization.Application.Interfaces;
+using Authorization.Domain.Entities;
+using Authorization.Shared.Common;
+using Authorization.Shared.Common.Errors;
+using Microsoft.AspNetCore.Identity;
+
+namespace Authorization.Application.Services;
+
+public class AuthService : IAuthService
+{
+    private readonly UserManager<Account> _userManager;
+    private readonly ITokenService _tokenService;
+
+    public AuthService(
+        UserManager<Account> userManager,
+        ITokenService tokenService)
+    {
+        _userManager = userManager;
+        _tokenService = tokenService;
+    }
+
+
+    public async Task<Result<AuthResponse>> RegisterAsync(
+        RegisterRequest dto,
+        CancellationToken cancellationToken = default)
+    {
+        var existingAccount =
+            await _userManager.FindByEmailAsync(dto.Email);
+
+        if (existingAccount is not null)
+        {
+            return Result<AuthResponse>.Failure(
+                AuthErrors.EmailAlreadyExists(dto.Email));
+        }
+
+
+        var account = new Account
+        {
+            UserName = dto.Email,
+            Email = dto.Email,
+
+            FirstName = dto.FirstName,
+            LastName = dto.LastName,
+
+            CreatedAt = DateTime.UtcNow
+        };
+
+
+        var result = await _userManager.CreateAsync(
+            account,
+            dto.Password);
+
+
+        if (!result.Succeeded)
+        {
+            var message = string.Join(
+                ", ",
+                result.Errors.Select(x => x.Description));
+
+
+            return Result<AuthResponse>.Failure(
+                AuthErrors.RegistrationFailed(message));
+        }
+
+
+        var tokens = await _tokenService
+            .GenerateTokensAsync(
+                account,
+                cancellationToken);
+
+
+        return Result<AuthResponse>.Success(
+            new AuthResponse(
+                account.Id,
+                account.Email!,
+                tokens.AccessToken,
+                tokens.RefreshToken,
+                tokens.ExpiresAt));
+    }
+
+
+    public async Task<Result<AuthResponse>> LoginAsync(
+        LoginRequest dto,
+        CancellationToken cancellationToken = default)
+    {
+        var account =
+            await _userManager.FindByEmailAsync(dto.Email);
+
+
+        if (account is null)
+        {
+            return Result<AuthResponse>.Failure(
+                AuthErrors.InvalidCredentials);
+        }
+
+
+        var passwordValid =
+            await _userManager.CheckPasswordAsync(
+                account,
+                dto.Password);
+
+
+        if (!passwordValid)
+        {
+            return Result<AuthResponse>.Failure(
+                AuthErrors.InvalidCredentials);
+        }
+
+
+        var tokens = await _tokenService
+            .GenerateTokensAsync(
+                account,
+                cancellationToken);
+
+
+        return Result<AuthResponse>.Success(
+            new AuthResponse(
+                account.Id,
+                account.Email!,
+                tokens.AccessToken,
+                tokens.RefreshToken,
+                tokens.ExpiresAt));
+    }
+
+
+    public Task<Result> LogoutAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult(
+            Result.Success());
+    }
+}
