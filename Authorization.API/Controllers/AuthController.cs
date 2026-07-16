@@ -1,5 +1,6 @@
 ﻿using Authorization.Application.DTO_s;
 using Authorization.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Authorization.API.Controllers;
@@ -63,7 +64,7 @@ public class AuthController : ControllerBase
         return Ok(result.Value);
     }
 
-
+    [Authorize]
     [HttpPost("logout")]
     public async Task<IActionResult> Logout(
         CancellationToken cancellationToken)

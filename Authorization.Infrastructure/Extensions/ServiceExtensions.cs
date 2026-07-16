@@ -1,12 +1,15 @@
-﻿using Authorization.Application.Interfaces;
+﻿using System.Text;
+using Authorization.Application.Interfaces;
 using Authorization.Domain.Entities;
 using Authorization.Infrastructure.Auth;
 using Authorization.Infrastructure.Db;
 using Authorization.Infrastructure.Repositories;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Authorization.Infrastructure.Extensions;
 
@@ -17,7 +20,9 @@ public static class ServiceExtensions
         services.AddDatabase(configuration)
             .AddRepositories()
             .AddJwtTokens(configuration)
-            .AddIdentityConfiguration(configuration);
+            .AddIdentityConfiguration()
+            .AddRedis(configuration)
+            .AddJwtAuthentication(configuration);
         
         return services;
     }
@@ -37,9 +42,7 @@ public static class ServiceExtensions
         services.Configure<JwtOptions>(
             configuration.GetSection(JwtOptions.SectionName));
 
-        services.AddScoped<
-            ITokenService,
-            JwtTokenService>();
+        services.AddScoped<ITokenService, JwtTokenService>();
 
         return services;
     }
@@ -53,8 +56,7 @@ public static class ServiceExtensions
     }
     
     public static IServiceCollection AddIdentityConfiguration(
-        this IServiceCollection services,
-        IConfiguration configuration)
+        this IServiceCollection services)
     {
         services.AddIdentity<Account, ApplicationRole>(options =>
             {
@@ -67,7 +69,65 @@ public static class ServiceExtensions
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
 
-
         return services;
     }
+    
+    public static IServiceCollection AddJwtAuthentication(this IServiceCollection services,
+        IConfiguration configuration)
+    {
+         services.AddAuthentication(options =>
+         {
+             options.DefaultAuthenticateScheme =
+                 JwtBearerDefaults.AuthenticationScheme;
+
+             options.DefaultChallengeScheme =
+                 JwtBearerDefaults.AuthenticationScheme;
+         })
+         .AddJwtBearer(options =>
+         {
+             var jwtOptions =
+                 configuration.GetSection(JwtOptions.SectionName)
+                     .Get<JwtOptions>()!;
+
+             options.TokenValidationParameters =
+                 new TokenValidationParameters
+                 {
+                     ValidateIssuer = true,
+                     ValidateAudience = true,
+                     ValidateLifetime = true,
+                     ValidateIssuerSigningKey = true,
+
+                     ValidIssuer = jwtOptions.Issuer,
+                     ValidAudience = jwtOptions.Audience,
+
+                     IssuerSigningKey =
+                         new SymmetricSecurityKey(
+                             Encoding.UTF8.GetBytes(
+                                 jwtOptions.SecretKey))
+                 };
+             
+             options.IncludeErrorDetails = true;
+         });
+         
+         services.AddAuthorization();
+         
+         return services;
+    }
+
+   
+    public static IServiceCollection AddRedis(this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration =
+                configuration.GetConnectionString("Redis");
+        });
+        
+        services.AddScoped<RefreshTokenService>();
+        services.AddSingleton<RefreshTokenGenerator>();
+        
+        return services;
+    }
+
 }

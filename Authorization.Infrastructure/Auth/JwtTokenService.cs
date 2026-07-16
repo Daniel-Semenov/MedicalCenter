@@ -11,17 +11,21 @@ namespace Authorization.Infrastructure.Auth;
 
 public class JwtTokenService : ITokenService
 {
+    private readonly RefreshTokenGenerator _refreshGenerator;
+    private readonly RefreshTokenService _refreshService;
     private readonly JwtOptions _options;
 
 
     public JwtTokenService(
-        IOptions<JwtOptions> options)
+        IOptions<JwtOptions> options, RefreshTokenGenerator refreshGenerator, RefreshTokenService refreshService)
     {
+        _refreshGenerator = refreshGenerator;
+        _refreshService = refreshService;
         _options = options.Value;
     }
 
 
-    public Task<TokenResult> GenerateTokensAsync(
+    public async Task<TokenResult> GenerateTokensAsync(
         Account account,
         CancellationToken cancellationToken = default)
     {
@@ -36,22 +40,18 @@ public class JwtTokenService : ITokenService
                 account.Email!)
         };
 
-
         var key = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(
                 _options.SecretKey));
-
 
         var credentials =
             new SigningCredentials(
                 key,
                 SecurityAlgorithms.HmacSha256);
 
-
         var expiresAt =
             DateTime.UtcNow.AddMinutes(
                 _options.ExpirationMinutes);
-
 
         var token = new JwtSecurityToken(
             issuer: _options.Issuer,
@@ -60,16 +60,23 @@ public class JwtTokenService : ITokenService
             expires: expiresAt,
             signingCredentials: credentials);
 
-
         var accessToken =
             new JwtSecurityTokenHandler()
                 .WriteToken(token);
+        
+        var refreshToken =
+            _refreshGenerator.Generate();
 
+        await _refreshService.SaveAsync(
+            account.Id,
+            refreshToken,
+            TimeSpan.FromHours(
+                _options.RefreshTokenExpirationHours));
 
-        return Task.FromResult(
+        return await Task.FromResult(
             new TokenResult(
                 accessToken,
-                string.Empty,
+                refreshToken,
                 expiresAt));
     }
 }
