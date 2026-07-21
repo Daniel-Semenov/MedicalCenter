@@ -89,4 +89,13 @@ public class AuthController : ControllerBase
 
         return Ok();
     }
+    
+    [HttpPost("refresh")]
+    [Authorize]
+    public async Task<IActionResult> Refresh(RefreshRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _authService.RefreshAsync(request, cancellationToken);
+
+        return result.IsSuccess ? Ok(result.Value) : Unauthorized(result.Error);
+    }
 }

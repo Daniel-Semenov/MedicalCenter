@@ -13,7 +13,7 @@ public class TokenBlacklistService
         _cache = cache;
     }
 
-    public async Task BlacklistAsync(string jti, TimeSpan ttl)
+    public async Task BlacklistAsync(string jti, TimeSpan ttl, CancellationToken cancellationToken = default)
     {
         if (ttl <= TimeSpan.Zero)
         {
@@ -24,12 +24,13 @@ public class TokenBlacklistService
             new DistributedCacheEntryOptions
             {
                 AbsoluteExpirationRelativeToNow = ttl
-            });
+            },
+            cancellationToken);
     }
 
-    public async Task<bool> IsBlacklistedAsync(string jti)
+    public async Task<bool> IsBlacklistedAsync(string jti, CancellationToken cancellationToken = default)
     {
-        var value = await _cache.GetStringAsync(KeyPrefix + jti);
+        var value = await _cache.GetStringAsync(KeyPrefix + jti, cancellationToken);
 
         return value is not null;
     }

@@ -4,6 +4,7 @@ using System.Text;
 using Authorization.Application.DTO_s;
 using Authorization.Application.Interfaces;
 using Authorization.Domain.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -15,17 +16,19 @@ public class JwtTokenService : ITokenService
     private readonly RefreshTokenService _refreshService;
     private readonly TokenBlacklistService _blacklistService;
     private readonly JwtOptions _options;
+    private readonly UserManager<Account> _userManager;
 
 
     public JwtTokenService(
         IOptions<JwtOptions> options,
         RefreshTokenGenerator refreshGenerator,
         RefreshTokenService refreshService,
-        TokenBlacklistService blacklistService)
+        TokenBlacklistService blacklistService, UserManager<Account> userManager)
     {
         _refreshGenerator = refreshGenerator;
         _refreshService = refreshService;
         _blacklistService = blacklistService;
+        _userManager = userManager;
         _options = options.Value;
     }
 
@@ -61,7 +64,7 @@ public class JwtTokenService : ITokenService
         await _refreshService.SaveAsync(
             account.Id,
             refreshToken,
-            TimeSpan.FromHours(_options.RefreshTokenExpirationHours));
+            TimeSpan.FromHours(_options.RefreshTokenExpirationHours), cancellationToken);
 
         return new TokenResult(
             accessToken,
@@ -72,13 +75,13 @@ public class JwtTokenService : ITokenService
 
     public async Task<Guid?> GetRefreshTokenOwnerAsync(string refreshToken, CancellationToken cancellationToken = default)
     {
-        return await _refreshService.GetUserIdAsync(refreshToken);
+        return await _refreshService.GetUserIdAsync(refreshToken, cancellationToken);
     }
 
 
     public async Task RevokeRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
     {
-        await _refreshService.RemoveAsync(refreshToken);
+        await _refreshService.RemoveAsync(refreshToken, cancellationToken);
     }
 
 
@@ -87,5 +90,25 @@ public class JwtTokenService : ITokenService
         await _blacklistService.BlacklistAsync(
             jti,
             TimeSpan.FromMinutes(_options.ExpirationMinutes));
+    }
+    
+    public async Task<TokenResult> RefreshTokensAsync(
+        string refreshToken,
+        CancellationToken cancellationToken = default)
+    {
+        var ownerId = await _refreshService.GetUserIdAsync(refreshToken, cancellationToken);
+
+        var account = await _userManager.FindByIdAsync(ownerId.Value.ToString());
+
+        await _refreshService.RemoveAsync(refreshToken, cancellationToken);
+
+        var tokens = await GenerateTokensAsync(
+            account,
+            cancellationToken);
+
+        return new TokenResult(
+            tokens.AccessToken,
+            tokens.RefreshToken,
+            tokens.ExpiresAt);
     }
 }

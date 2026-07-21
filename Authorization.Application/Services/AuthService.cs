@@ -128,4 +128,36 @@ public class AuthService : IAuthService
 
         return Result.Success();
     }
+    
+    public async Task<Result<AuthResponse>> RefreshAsync(
+        RefreshRequest dto,
+        CancellationToken cancellationToken = default)
+    {
+        var ownerId = await _tokenService.GetRefreshTokenOwnerAsync(
+            dto.RefreshToken,
+            cancellationToken);
+
+        if (ownerId is null)
+        {
+            return Result<AuthResponse>.Failure(AuthErrors.InvalidRefreshToken(dto.RefreshToken));
+        }
+
+        var account = await _userManager.FindByIdAsync(ownerId.Value.ToString());
+
+        if (account is null || !account.IsActive)
+        {
+            return Result<AuthResponse>.Failure(AuthErrors.InvalidRefreshToken(dto.RefreshToken));
+        }
+
+        var tokens = await _tokenService.RefreshTokensAsync(
+            dto.RefreshToken,
+            cancellationToken);
+
+        return Result<AuthResponse>.Success(new AuthResponse(
+            account.Id,
+            account.Email!,
+            tokens.AccessToken,
+            tokens.RefreshToken,
+            tokens.ExpiresAt));
+    }
 }

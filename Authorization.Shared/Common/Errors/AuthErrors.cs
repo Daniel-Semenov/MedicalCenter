@@ -30,4 +30,11 @@ public static class AuthErrors
             "AUTH_LOGOUT_FAILED",
             message,
             StatusCodes.Status400BadRequest);
+
+    public static Error InvalidRefreshToken(string refreshToken) =>
+        new(
+            "AUTH_INVALID_REFRESH_TOKEN",
+            $"Invalid refresh token: {refreshToken}",
+            StatusCodes.Status400BadRequest
+        );
 }
