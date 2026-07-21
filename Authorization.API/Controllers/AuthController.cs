@@ -1,4 +1,6 @@
-﻿using Authorization.Application.DTO_s;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Authorization.Application.DTO_s;
 using Authorization.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -67,20 +69,23 @@ public class AuthController : ControllerBase
     [Authorize]
     [HttpPost("logout")]
     public async Task<IActionResult> Logout(
+        LogoutRequest request,
         CancellationToken cancellationToken)
     {
-        var result =
-            await _authService.LogoutAsync(
-                cancellationToken);
+        var userId = Guid.Parse( User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
+        var jti = User.FindFirst(JwtRegisteredClaimNames.Jti)!.Value;
+
+        var result = await _authService.LogoutAsync(
+            userId,
+            jti,
+            request,
+            cancellationToken);
 
         if (result.IsFailure)
         {
-            return StatusCode(
-                result.Error!.StatusCode,
-                result.Error);
+            return StatusCode(result.Error!.StatusCode, result.Error);
         }
-
 
         return Ok();
     }

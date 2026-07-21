@@ -12,9 +12,7 @@ public class AuthService : IAuthService
     private readonly UserManager<Account> _userManager;
     private readonly ITokenService _tokenService;
 
-    public AuthService(
-        UserManager<Account> userManager,
-        ITokenService tokenService)
+    public AuthService(UserManager<Account> userManager, ITokenService tokenService)
     {
         _userManager = userManager;
         _tokenService = tokenService;
@@ -25,8 +23,7 @@ public class AuthService : IAuthService
         RegisterRequest dto,
         CancellationToken cancellationToken = default)
     {
-        var existingAccount =
-            await _userManager.FindByEmailAsync(dto.Email);
+        var existingAccount = await _userManager.FindByEmailAsync(dto.Email);
 
         if (existingAccount is not null)
         {
@@ -47,9 +44,7 @@ public class AuthService : IAuthService
         };
 
 
-        var result = await _userManager.CreateAsync(
-            account,
-            dto.Password);
+        var result = await _userManager.CreateAsync(account, dto.Password);
 
 
         if (!result.Succeeded)
@@ -64,10 +59,7 @@ public class AuthService : IAuthService
         }
 
 
-        var tokens = await _tokenService
-            .GenerateTokensAsync(
-                account,
-                cancellationToken);
+        var tokens = await _tokenService.GenerateTokensAsync(account, cancellationToken);
 
 
         return Result<AuthResponse>.Success(
@@ -84,8 +76,7 @@ public class AuthService : IAuthService
         LoginRequest dto,
         CancellationToken cancellationToken = default)
     {
-        var account =
-            await _userManager.FindByEmailAsync(dto.Email);
+        var account = await _userManager.FindByEmailAsync(dto.Email);
 
 
         if (account is null)
@@ -95,10 +86,7 @@ public class AuthService : IAuthService
         }
 
 
-        var passwordValid =
-            await _userManager.CheckPasswordAsync(
-                account,
-                dto.Password);
+        var passwordValid = await _userManager.CheckPasswordAsync(account, dto.Password);
 
 
         if (!passwordValid)
@@ -108,10 +96,7 @@ public class AuthService : IAuthService
         }
 
 
-        var tokens = await _tokenService
-            .GenerateTokensAsync(
-                account,
-                cancellationToken);
+        var tokens = await _tokenService.GenerateTokensAsync(account, cancellationToken);
 
 
         return Result<AuthResponse>.Success(
@@ -124,10 +109,23 @@ public class AuthService : IAuthService
     }
 
 
-    public Task<Result> LogoutAsync(
+    public async Task<Result> LogoutAsync(
+        Guid userId,
+        string jti,
+        LogoutRequest dto,
         CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(
-            Result.Success());
+        var refreshOwnerId = await _tokenService.GetRefreshTokenOwnerAsync(dto.RefreshToken, cancellationToken);
+
+        if (refreshOwnerId is null || refreshOwnerId != userId)
+        {
+            return Result.Failure(
+                AuthErrors.LogoutFailed("Refresh token is invalid or does not belong to the current user."));
+        }
+
+        await _tokenService.RevokeRefreshTokenAsync(dto.RefreshToken, cancellationToken);
+        await _tokenService.RevokeAccessTokenAsync(jti, cancellationToken);
+
+        return Result.Success();
     }
 }

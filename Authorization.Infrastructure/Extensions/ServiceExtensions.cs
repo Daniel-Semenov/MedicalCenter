@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Text;
 using Authorization.Application.Interfaces;
 using Authorization.Domain.Entities;
 using Authorization.Infrastructure.Auth;
@@ -72,49 +73,75 @@ public static class ServiceExtensions
         return services;
     }
     
-    public static IServiceCollection AddJwtAuthentication(this IServiceCollection services,
+   public static IServiceCollection AddJwtAuthentication(this IServiceCollection services,
         IConfiguration configuration)
     {
-         services.AddAuthentication(options =>
-         {
-             options.DefaultAuthenticateScheme =
-                 JwtBearerDefaults.AuthenticationScheme;
+        services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme =
+                JwtBearerDefaults.AuthenticationScheme;
 
-             options.DefaultChallengeScheme =
-                 JwtBearerDefaults.AuthenticationScheme;
-         })
-         .AddJwtBearer(options =>
-         {
-             var jwtOptions =
-                 configuration.GetSection(JwtOptions.SectionName)
-                     .Get<JwtOptions>()!;
+            options.DefaultChallengeScheme =
+                JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            var jwtOptions =
+                configuration.GetSection(JwtOptions.SectionName)
+                    .Get<JwtOptions>()!;
 
-             options.TokenValidationParameters =
-                 new TokenValidationParameters
-                 {
-                     ValidateIssuer = true,
-                     ValidateAudience = true,
-                     ValidateLifetime = true,
-                     ValidateIssuerSigningKey = true,
+            options.TokenValidationParameters =
+                new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
 
-                     ValidIssuer = jwtOptions.Issuer,
-                     ValidAudience = jwtOptions.Audience,
+                    ValidIssuer = jwtOptions.Issuer,
+                    ValidAudience = jwtOptions.Audience,
 
-                     IssuerSigningKey =
-                         new SymmetricSecurityKey(
-                             Encoding.UTF8.GetBytes(
-                                 jwtOptions.SecretKey))
-                 };
-             
-             options.IncludeErrorDetails = true;
-         });
-         
-         services.AddAuthorization();
-         
-         return services;
+                    IssuerSigningKey =
+                        new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(
+                                jwtOptions.SecretKey)),
+
+                    ClockSkew = TimeSpan.Zero
+                };
+
+            options.IncludeErrorDetails = true;
+
+            options.Events = new JwtBearerEvents
+            {
+                OnTokenValidated = async context =>
+                {
+                    var jti = context.Principal?
+                        .FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
+
+                    if (string.IsNullOrEmpty(jti))
+                    {
+                        context.Fail("Token has no jti claim.");
+                        return;
+                    }
+
+                    var blacklistService = context.HttpContext
+                        .RequestServices
+                        .GetRequiredService<TokenBlacklistService>();
+
+                    if (await blacklistService.IsBlacklistedAsync(jti))
+                    {
+                        context.Fail("Token has been revoked.");
+                    }
+                }
+            };
+        });
+
+        services.AddAuthorization();
+
+        return services;
     }
 
-   
+
     public static IServiceCollection AddRedis(this IServiceCollection services,
         IConfiguration configuration)
     {
@@ -123,10 +150,11 @@ public static class ServiceExtensions
             options.Configuration =
                 configuration.GetConnectionString("Redis");
         });
-        
+
         services.AddScoped<RefreshTokenService>();
         services.AddSingleton<RefreshTokenGenerator>();
-        
+        services.AddScoped<TokenBlacklistService>();
+
         return services;
     }
 
