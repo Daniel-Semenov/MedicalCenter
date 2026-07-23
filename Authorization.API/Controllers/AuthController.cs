@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using Authorization.Application.DTO_s;
 using Authorization.Application.Interfaces;
+using Authorization.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -93,7 +94,7 @@ public class AuthController : ControllerBase
         return result.IsSuccess ? Ok(result.Value) : Unauthorized(result.Error);
     }
     
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Roles.Admin)]
     [HttpPost("accounts/{accountId:guid}/roles")]
     public async Task<IActionResult> AddRole(
         Guid accountId,

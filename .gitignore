@@ -28,6 +28,7 @@ packages/
 *.dbmdl
 
 appsettings.Development.json
+appsettings.json
 appsettings.Local.json
 appsettings.Production.json
 *.secrets.json
