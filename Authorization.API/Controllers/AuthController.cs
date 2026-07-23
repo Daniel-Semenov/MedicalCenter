@@ -22,9 +22,7 @@ public class AuthController : ControllerBase
 
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register(
-        RegisterRequest request,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> Register(RegisterRequest request, CancellationToken cancellationToken)
     {
         var result =
             await _authService.RegisterAsync(
@@ -45,9 +43,7 @@ public class AuthController : ControllerBase
 
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login(
-        LoginRequest request,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> Login(LoginRequest request, CancellationToken cancellationToken)
     {
         var result =
             await _authService.LoginAsync(
@@ -68,9 +64,7 @@ public class AuthController : ControllerBase
 
     [Authorize]
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout(
-        LogoutRequest request,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> Logout(LogoutRequest request, CancellationToken cancellationToken)
     {
         var userId = Guid.Parse( User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
@@ -90,12 +84,36 @@ public class AuthController : ControllerBase
         return Ok();
     }
     
-    [HttpPost("refresh")]
     [Authorize]
+    [HttpPost("refresh")]
     public async Task<IActionResult> Refresh(RefreshRequest request, CancellationToken cancellationToken)
     {
         var result = await _authService.RefreshAsync(request, cancellationToken);
 
         return result.IsSuccess ? Ok(result.Value) : Unauthorized(result.Error);
+    }
+    
+    [Authorize(Roles = "Admin")]
+    [HttpPost("accounts/{accountId:guid}/roles")]
+    public async Task<IActionResult> AddRole(
+        Guid accountId,
+        AddRoleRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _authService.AddRoleAsync(
+            accountId,
+            request.Role,
+            cancellationToken);
+
+
+        if (result.IsFailure)
+        {
+            return StatusCode(
+                result.Error!.StatusCode,
+                result.Error);
+        }
+
+
+        return Ok();
     }
 }

@@ -23,7 +23,8 @@ public class JwtTokenService : ITokenService
         IOptions<JwtOptions> options,
         RefreshTokenGenerator refreshGenerator,
         RefreshTokenService refreshService,
-        TokenBlacklistService blacklistService, UserManager<Account> userManager)
+        TokenBlacklistService blacklistService,
+        UserManager<Account> userManager)
     {
         _refreshGenerator = refreshGenerator;
         _refreshService = refreshService;
@@ -43,6 +44,10 @@ public class JwtTokenService : ITokenService
 
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+        
+        var roles = await _userManager.GetRolesAsync(account);
+
+        claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SecretKey));
 

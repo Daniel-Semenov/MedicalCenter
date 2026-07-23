@@ -11,11 +11,13 @@ public class AuthService : IAuthService
 {
     private readonly UserManager<Account> _userManager;
     private readonly ITokenService _tokenService;
+    private readonly RoleManager<ApplicationRole> _roleManager;
 
-    public AuthService(UserManager<Account> userManager, ITokenService tokenService)
+    public AuthService(UserManager<Account> userManager, ITokenService tokenService, RoleManager<ApplicationRole> roleManager)
     {
         _userManager = userManager;
         _tokenService = tokenService;
+        _roleManager = roleManager;
     }
 
 
@@ -159,5 +161,43 @@ public class AuthService : IAuthService
             tokens.AccessToken,
             tokens.RefreshToken,
             tokens.ExpiresAt));
+    }
+    
+    public async Task<Result> AddRoleAsync(
+        Guid accountId,
+        string role,
+        CancellationToken cancellationToken = default)
+    {
+        var account = await _userManager.FindByIdAsync(accountId.ToString());
+
+        if (account is null)
+        {
+            return Result.Failure(AuthErrors.UserNotFound);
+        }
+
+        if (!await _roleManager.RoleExistsAsync(role))
+        {
+            return Result.Failure(AuthErrors.RoleNotFound);
+        }
+
+        var userRoles = await _userManager.GetRolesAsync(account);
+
+        if (userRoles.Any())
+        {
+            return Result.Failure(AuthErrors.UserAlreadyHasRole);
+        }
+
+        var result = await _userManager.AddToRoleAsync(account, role);
+
+        if (!result.Succeeded)
+        {
+            var error = string.Join(
+                ", ",
+                result.Errors.Select(x => x.Description));
+
+            return Result.Failure(AuthErrors.RoleAssignmentFailed(error));
+        }
+
+        return Result.Success();
     }
 }
