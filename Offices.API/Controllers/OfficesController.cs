@@ -17,10 +17,15 @@ public class OfficesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var result = await _mediator.Send(new GetAllOfficesQuery(), cancellationToken);
-        
+        var query = new GetAllOfficesQuery
+        {
+            Page = page,
+            PageSize = pageSize
+        };
+    
+        var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
     }
 

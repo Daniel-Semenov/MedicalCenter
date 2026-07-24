@@ -4,7 +4,7 @@ using Offices.Application.Interfaces;
 
 namespace Offices.Application.Queries.Handlers;
 
-public class GetAllOfficesQueryHandler : IRequestHandler<GetAllOfficesQuery, IEnumerable<OfficeResponse>>
+public class GetAllOfficesQueryHandler : IRequestHandler<GetAllOfficesQuery, PagedResult<OfficeResponse>>
 {
     private readonly IOfficeRepository _officeRepository;
 
@@ -13,17 +13,31 @@ public class GetAllOfficesQueryHandler : IRequestHandler<GetAllOfficesQuery, IEn
         _officeRepository = officeRepository;
     }
 
-    public async Task<IEnumerable<OfficeResponse>> Handle(GetAllOfficesQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<OfficeResponse>> Handle(GetAllOfficesQuery request, CancellationToken cancellationToken)
     {
-        var offices = await _officeRepository.GetAllAsync(cancellationToken);
+        var allOffices = await _officeRepository.GetAllAsync(cancellationToken);
+        
+        var officeList = allOffices.ToList();
+        var totalCount = officeList.Count;
 
-        return offices.Select(office => new OfficeResponse
+        var pagedOffices = officeList
+            .Skip((request.Page - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .Select(office => new OfficeResponse
+            {
+                Id = office.Id,
+                FullAddress = $"{office.City}, {office.Street} {office.HouseNumber}/{office.OfficeNumber}",
+                IsActive = office.IsActive,
+                PhoneNumber = office.PhoneNumber,
+                PhotoUrl = office.PhotoUrl
+            });
+
+        return new PagedResult<OfficeResponse>
         {
-            Id = office.Id,
-            FullAddress = $"{office.City}, {office.Street} {office.HouseNumber}/{office.OfficeNumber}",
-            IsActive = office.IsActive,
-            PhoneNumber = office.PhoneNumber,
-            PhotoUrl = office.PhotoUrl
-        });
+            Items = pagedOffices,
+            TotalCount = totalCount,
+            Page = request.Page,
+            PageSize = request.PageSize
+        };
     }
 }
