@@ -4,12 +4,20 @@
         <TargetFramework>net8.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
-        <RootNamespace>Offices</RootNamespace>
+        <RootNamespace>Offices.API</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.11"/>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.17"/>
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Offices.Infrastructure\Offices.Infrastructure.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="wwwroot\uploads\" />
     </ItemGroup>
 
 </Project>
