@@ -1,6 +1,5 @@
-
 using Offices.API.Middleware;
-using Offices.Application.Commands;
+using Offices.Application.Extensions;
 using Offices.Infrastructure.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,11 +10,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddInfrastructure(builder.Configuration);
 
-builder.Services.AddMediatR(cfg =>
-{
-    cfg.RegisterServicesFromAssembly(typeof(CreateOfficeCommand).Assembly);
-});
-
+builder.Services.AddApplication();
 
 var app = builder.Build();
 

@@ -2,6 +2,7 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Offices.Domain.Exceptions;
+using FluentValidation;
 
 namespace Offices.API.Middleware;
 
@@ -46,6 +47,23 @@ public class ExceptionHandling
 
         switch (exception)
         {
+            case ValidationException ex:
+                response.StatusCode = (int)HttpStatusCode.BadRequest;
+                problemDetails.Title = "Validation error";
+                problemDetails.Status = (int)HttpStatusCode.BadRequest;
+                problemDetails.Detail = "One or more validation errors occurred";
+                problemDetails.Extensions["errors"] = ex.Errors
+                    .GroupBy(e => e.PropertyName)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(e => e.ErrorMessage).ToArray()
+                    );
+        
+                _logger.LogWarning("Validation failed: {@Errors}. Path: {Path}, TraceId: {TraceId}", 
+                    ex.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }), 
+                    context.Request.Path, context.TraceIdentifier);
+                break;
+            
             case OfficeNotFoundException ex:
                 response.StatusCode = (int)HttpStatusCode.NotFound;
                 problemDetails.Title = "Office not found";
