@@ -1,4 +1,5 @@
 
+using Offices.API.Middleware;
 using Offices.Application.Commands;
 using Offices.Infrastructure.Extensions;
 
@@ -15,7 +16,10 @@ builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(CreateOfficeCommand).Assembly);
 });
 
+
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandling>();
 
 if (app.Environment.IsDevelopment())
 {

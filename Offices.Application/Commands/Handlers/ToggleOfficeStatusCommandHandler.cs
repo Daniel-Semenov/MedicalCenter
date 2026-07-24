@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using Offices.Application.Interfaces;
+using Offices.Domain.Exceptions;
 
 namespace Offices.Application.Commands.Handlers;
 
@@ -18,7 +19,7 @@ public class ToggleOfficeStatusCommandHandler : IRequestHandler<ToggleOfficeStat
 
         if (office is null)
         {
-            throw new KeyNotFoundException($"Office with id {request.Id} not found");
+            throw new OfficeNotFoundException($"Office with id {request.Id} not found");
         }
         
         office.ToggleStatus();

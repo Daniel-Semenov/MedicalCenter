@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using Offices.Application.Interfaces;
+using Offices.Domain.Exceptions;
 
 namespace Offices.Application.Commands.Handlers;
 
@@ -22,7 +23,7 @@ public class UpdateOfficePhotoCommandHandler : IRequestHandler<UpdateOfficePhoto
         
         if (office is null)
         {
-            throw new KeyNotFoundException($"Office with id {request.OfficeId} not found"); 
+            throw new OfficeNotFoundException($"Office with id {request.OfficeId} not found"); 
         }
 
         if (!string.IsNullOrEmpty(office.PhotoUrl))

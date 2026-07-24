@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Offices.Application.DTO_s;
 using Offices.Application.Interfaces;
+using Offices.Domain.Exceptions;
 
 namespace Offices.Application.Commands.Handlers;
 
@@ -19,7 +20,7 @@ public class DeleteOfficeCommandHandler : IRequestHandler<DeleteOfficeCommand>
 
         if (!exists)
         {
-            throw new KeyNotFoundException($"Office with id {request.Id} not found");
+            throw new OfficeNotFoundException($"Office with id {request.Id} not found");
         }
         
         await _officeRepository.DeleteAsync(request.Id, cancellationToken);

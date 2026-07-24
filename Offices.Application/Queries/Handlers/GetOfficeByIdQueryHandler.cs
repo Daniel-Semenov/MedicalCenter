@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Offices.Application.DTO_s;
 using Offices.Application.Interfaces;
+using Offices.Domain.Exceptions;
 
 namespace Offices.Application.Queries.Handlers;
 
@@ -19,7 +20,7 @@ public class GetOfficeByIdQueryHandler : IRequestHandler<GetOfficeByIdQuery, Off
         
         if (office is null)
         {
-            throw new KeyNotFoundException($"Office with id {request.Id} not found");  
+            throw new OfficeNotFoundException($"Office with id {request.Id} not found");  
         }
 
         return new OfficeResponse
