@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Offices.Application.Commands;
+using Offices.Application.DTO_s;
 using Offices.Application.Queries;
 
 namespace Offices.API.Controllers;
@@ -46,9 +47,19 @@ public class OfficesController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateOfficeCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateOfficeRequest request, 
+        CancellationToken cancellationToken)
     {
-        command.Id = id;
+        var command = new UpdateOfficeCommand
+        {
+            Id = id,
+            City = request.City,
+            Street = request.Street,
+            HouseNumber = request.HouseNumber,
+            OfficeNumber = request.OfficeNumber,
+            PhoneNumber = request.PhoneNumber
+        };
+    
         var result = await _mediator.Send(command, cancellationToken);
         
         return Ok(result);
