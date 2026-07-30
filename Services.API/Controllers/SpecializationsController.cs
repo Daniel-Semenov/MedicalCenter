@@ -20,7 +20,7 @@ public class SpecializationsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
     {
-        var query = new GetSpecializationsQuery { PageNumber = pageNumber, PageSize = pageSize };
+        var query = new GetSpecializationsQuery { Page = pageNumber, PageSize = pageSize };
         
         var result = await _mediator.Send(query, cancellationToken);
         

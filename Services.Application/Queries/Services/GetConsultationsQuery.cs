@@ -1,11 +1,12 @@
-﻿using MediatR;
+using MediatR;
 using Services.Application.DTO_s;
 using Services.Application.DTO_s.Specialization;
+using Services.Application.Interfaces;
 
 namespace Services.Application.Queries.Services;
 
-public class GetConsultationsQuery : IRequest<PagedResult<SpecializationGroupDto>>
+public class GetConsultationsQuery : IRequest<PagedResult<SpecializationGroupDto>>, IPagedQuery
 {
-    public int PageNumber { get; set; } = 1;
+    public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 10;
 }

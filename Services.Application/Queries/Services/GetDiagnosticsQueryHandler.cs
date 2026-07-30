@@ -17,7 +17,7 @@ public class GetDiagnosticsQueryHandler : IRequestHandler<GetDiagnosticsQuery, P
 
     public async Task<PagedResult<ServiceDto>> Handle(GetDiagnosticsQuery request, CancellationToken cancellationToken)
     {
-        var services = await _serviceRepository.GetByCategoryAsync(ServiceCategory.Diagnostics, request.PageNumber, request.PageSize, cancellationToken);
+        var services = await _serviceRepository.GetByCategoryAsync(ServiceCategory.Diagnostics, request.Page, request.PageSize, cancellationToken);
         var totalCount = await _serviceRepository.GetTotalCountByCategoryAsync(ServiceCategory.Diagnostics, cancellationToken);
         
         var items = services.Select(s => new ServiceDto
@@ -34,7 +34,7 @@ public class GetDiagnosticsQueryHandler : IRequestHandler<GetDiagnosticsQuery, P
         {
             Items = items,
             TotalCount = totalCount,
-            Page = request.PageNumber,
+            Page = request.Page,
             PageSize = request.PageSize
         };
     }

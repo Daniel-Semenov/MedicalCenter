@@ -17,7 +17,7 @@ public class GetSpecializationsQueryHandler : IRequestHandler<GetSpecializations
 
     public async Task<PagedResult<SpecializationDto>> Handle(GetSpecializationsQuery request, CancellationToken cancellationToken)
     {
-        var specializations = await _specializationRepository.GetAllAsync(request.PageNumber, request.PageSize, cancellationToken);
+        var specializations = await _specializationRepository.GetAllAsync(request.Page, request.PageSize, cancellationToken);
         var totalCount = await _specializationRepository.GetTotalCountAsync(cancellationToken);
         
         var items = specializations.Select(s => new SpecializationDto
@@ -40,7 +40,7 @@ public class GetSpecializationsQueryHandler : IRequestHandler<GetSpecializations
         {
             Items = items,
             TotalCount = totalCount,
-            Page = request.PageNumber,
+            Page = request.Page,
             PageSize = request.PageSize
         };
     }

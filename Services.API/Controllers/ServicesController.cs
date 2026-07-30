@@ -20,7 +20,7 @@ public class ServicesController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
     {
-        var query = new GetServicesQuery { PageNumber = pageNumber, PageSize = pageSize };
+        var query = new GetServicesQuery { Page = pageNumber, PageSize = pageSize };
         
         var result = await _mediator.Send(query, cancellationToken);
         
@@ -40,7 +40,7 @@ public class ServicesController : ControllerBase
     [HttpGet("consultations")]
     public async Task<IActionResult> GetConsultations([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
     {
-        var query = new GetConsultationsQuery { PageNumber = pageNumber, PageSize = pageSize };
+        var query = new GetConsultationsQuery { Page = pageNumber, PageSize = pageSize };
         
         var result = await _mediator.Send(query, cancellationToken);
         
@@ -50,7 +50,7 @@ public class ServicesController : ControllerBase
     [HttpGet("diagnostics")]
     public async Task<IActionResult> GetDiagnostics([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
     {
-        var query = new GetDiagnosticsQuery { PageNumber = pageNumber, PageSize = pageSize };
+        var query = new GetDiagnosticsQuery { Page = pageNumber, PageSize = pageSize };
         
         var result = await _mediator.Send(query, cancellationToken);
         
@@ -60,7 +60,7 @@ public class ServicesController : ControllerBase
     [HttpGet("analyses")]
     public async Task<IActionResult> GetAnalyses([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
     {
-        var query = new GetAnalysesQuery { PageNumber = pageNumber, PageSize = pageSize };
+        var query = new GetAnalysesQuery { Page = pageNumber, PageSize = pageSize };
         
         var result = await _mediator.Send(query, cancellationToken);
         
