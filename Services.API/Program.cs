@@ -1,3 +1,4 @@
+using Services.API.Middleware;
 using Services.Application.Extensions;
 using Services.Infrastructure.Extensions;
 
@@ -11,6 +12,8 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandling>();
 
 if (app.Environment.IsDevelopment())
 {
