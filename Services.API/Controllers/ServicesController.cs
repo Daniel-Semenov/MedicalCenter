@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Services.Application.Commands.Services;
+using Services.Application.DTO_s.Service;
 using Services.Application.Queries.Services;
 
 namespace Services.API.Controllers;
@@ -75,10 +76,16 @@ public class ServicesController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateServiceCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateServiceRequest request, CancellationToken cancellationToken)
     {
-        command.Id = id;
-        
+        var command = new UpdateServiceCommand
+        {
+            Id = id,
+            Name = request.Name,
+            Price = request.Price,
+            Status = request.Status
+        };
+    
         await _mediator.Send(command, cancellationToken);
         
         return NoContent();

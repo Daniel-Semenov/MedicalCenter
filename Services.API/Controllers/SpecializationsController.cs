@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Services.Application.Commands.Specializations;
+using Services.Application.DTO_s.Specialization;
 using Services.Application.Queries.Specializations;
 
 namespace Services.API.Controllers;
@@ -45,12 +46,16 @@ public class SpecializationsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateSpecializationCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateSpecializationRequest request, CancellationToken cancellationToken)
     {
-        command.Id = id;
-        
+        var command = new UpdateSpecializationCommand
+        {
+            Id = id,
+            Name = request.Name,
+            Status = request.Status
+        };
+    
         await _mediator.Send(command, cancellationToken);
-        
         return NoContent();
     }
 
