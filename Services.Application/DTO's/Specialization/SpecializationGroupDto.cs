@@ -6,5 +6,5 @@ public class SpecializationGroupDto
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = null!;
-    public List<ServiceDto> Consultations { get; set; } = new();
+    public List<ServiceDto> Services { get; set; } = new();
 }
