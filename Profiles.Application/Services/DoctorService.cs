@@ -141,9 +141,9 @@ public class DoctorService : IDoctorService
         });
     }
 
-    public async Task<Result<DoctorResponseDto>> UpdateAsync(UpdateDoctorRequestDto request, CancellationToken cancellationToken = default)
+    public async Task<Result<DoctorResponseDto>> UpdateAsync(Guid id, UpdateDoctorRequestDto request, CancellationToken cancellationToken = default)
     {
-        var getResult = await _doctorRepository.GetByIdAsync(request.Id, cancellationToken);
+        var getResult = await _doctorRepository.GetByIdAsync(id, cancellationToken);
 
         if (!getResult.IsSuccess)
         {

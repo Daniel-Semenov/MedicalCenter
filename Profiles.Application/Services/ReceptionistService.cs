@@ -108,9 +108,9 @@ public class ReceptionistService : IReceptionistService
         return Result<ReceptionistResponseDto>.Success(dto);
     }
 
-    public async Task<Result<ReceptionistResponseDto>> UpdateAsync(UpdateReceptionistRequestDto request, CancellationToken cancellationToken = default)
+    public async Task<Result<ReceptionistResponseDto>> UpdateAsync(Guid id, UpdateReceptionistRequestDto request, CancellationToken cancellationToken = default)
     {
-        var getResult = await _receptionistRepository.GetByIdAsync(request.Id, cancellationToken);
+        var getResult = await _receptionistRepository.GetByIdAsync(id, cancellationToken);
 
         if (!getResult.IsSuccess)
         {

@@ -11,6 +11,6 @@ public interface IReceptionistService
     Task<Result<ReceptionistResponseDto>> GetByAccountIdAsync(Guid accountId, CancellationToken cancellationToken = default);
     Task<Result<PagedResult<ReceptionistResponseDto>>> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default);
     Task<Result<ReceptionistResponseDto>> CreateAsync(CreateReceptionistRequestDto request, CancellationToken cancellationToken = default);
-    Task<Result<ReceptionistResponseDto>> UpdateAsync(UpdateReceptionistRequestDto request, CancellationToken cancellationToken = default);
+    Task<Result<ReceptionistResponseDto>> UpdateAsync(Guid id, UpdateReceptionistRequestDto request, CancellationToken cancellationToken = default);
     Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 }

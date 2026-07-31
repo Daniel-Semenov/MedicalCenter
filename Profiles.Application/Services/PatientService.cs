@@ -108,9 +108,10 @@ public class PatientService : IPatientService
         return Result<PatientResponseDto>.Success(dto);
     }
 
-    public async Task<Result<PatientResponseDto>> UpdateAsync(UpdatePatientRequestDto request, CancellationToken cancellationToken = default)
+    public async Task<Result<PatientResponseDto>> UpdateAsync(Guid id, UpdatePatientRequestDto request, CancellationToken cancellationToken = default)
     {
-        var getResult = await _patientRepository.GetByIdAsync(request.Id, cancellationToken);
+        var getResult = await _patientRepository.GetByIdAsync(id, cancellationToken);
+        
 
         if (!getResult.IsSuccess)
         {

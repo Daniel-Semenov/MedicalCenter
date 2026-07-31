@@ -12,6 +12,6 @@ public interface IDoctorService
     Task<Result<PagedResult<DoctorResponseDto>>> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default);
     Task<Result<PagedResult<DoctorResponseDto>>> GetBySpecializationAsync(Guid specializationId, int page, int pageSize, CancellationToken cancellationToken = default);
     Task<Result<DoctorResponseDto>> CreateAsync(CreateDoctorRequestDto request, CancellationToken cancellationToken = default);
-    Task<Result<DoctorResponseDto>> UpdateAsync(UpdateDoctorRequestDto request, CancellationToken cancellationToken = default);
+    Task<Result<DoctorResponseDto>> UpdateAsync(Guid id, UpdateDoctorRequestDto request, CancellationToken cancellationToken = default);
     Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 }
