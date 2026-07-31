@@ -1,8 +1,11 @@
+using Profiles.Application.Extensions;
 using Profiles.Infrastructure.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddInfrastructureLayer(builder.Configuration); 
+
+builder.Services.AddApplicationLayer(); 
 
 builder.Services.AddAuthentication();
 
