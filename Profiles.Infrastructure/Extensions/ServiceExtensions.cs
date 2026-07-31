@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Profiles.Application.Interfaces;
+using Profiles.Application.Interfaces.Repositories;
 using Profiles.Infrastructure.Db;
 using Profiles.Infrastructure.Repositories;
 

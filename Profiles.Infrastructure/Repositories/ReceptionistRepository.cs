@@ -1,8 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Profiles.Application.Interfaces;
+using Profiles.Application.Interfaces.Repositories;
 using Profiles.Domain.Entities;
 using Profiles.Shared.Common;
 using Profiles.Shared.Common.Errors;
+using Profiles.Shared.Common.Pagination;
 using Profiles.Infrastructure.Db;
 
 namespace Profiles.Infrastructure.Repositories;
@@ -40,8 +41,7 @@ public class ReceptionistRepository : IReceptionistRepository
 
         if (receptionist is null)
         {
-            return Result<Receptionist>.Failure(
-                ReceptionistErrors.AccountNotFound(accountId));
+            return Result<Receptionist>.Failure(ReceptionistErrors.AccountNotFound(accountId));
         }
 
         return Result<Receptionist>.Success(receptionist);
@@ -102,5 +102,53 @@ public class ReceptionistRepository : IReceptionistRepository
         await _context.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
+    }
+
+    public async Task<Result> DeleteAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var receptionist = await _context.Receptionists
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+
+        if (receptionist is null)
+        {
+            return Result.Failure(ReceptionistErrors.NotFound(id));
+        }
+
+        _context.Receptionists.Remove(receptionist);
+        
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return Result.Success();
+    }
+
+    public async Task<Result<PagedResult<Receptionist>>> GetPagedAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var query = _context.Receptionists.AsNoTracking();
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        var pagedResult = new PagedResult<Receptionist>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize
+        };
+
+        return Result<PagedResult<Receptionist>>.Success(pagedResult);
     }
 }
