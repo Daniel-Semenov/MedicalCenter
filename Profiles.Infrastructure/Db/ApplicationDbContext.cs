@@ -16,6 +16,8 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<Receptionist> Receptionists { get; set; }
 
+    public DbSet<DoctorService> DoctorServices { get; set; }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

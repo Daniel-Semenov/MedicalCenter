@@ -21,6 +21,7 @@ public class DoctorRepository : IDoctorRepository
     {
         var doctor = await _context.Doctors
             .AsNoTracking()
+            .Include(d => d.Services)
             .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
 
         if (doctor is null)
@@ -35,6 +36,7 @@ public class DoctorRepository : IDoctorRepository
     {
         var doctor = await _context.Doctors
             .AsNoTracking()
+            .Include(d => d.Services)
             .FirstOrDefaultAsync(d => d.AccountId == accountId, cancellationToken);
 
         if (doctor is null)
@@ -51,6 +53,7 @@ public class DoctorRepository : IDoctorRepository
     {
         var doctors = await _context.Doctors
             .AsNoTracking()
+            .Include(d => d.Services)
             .Where(d => d.SpecializationId == specializationId)
             .ToListAsync(cancellationToken);
 
@@ -70,6 +73,7 @@ public class DoctorRepository : IDoctorRepository
 
         var doctors = await _context.Doctors
             .AsNoTracking()
+            .Include(d => d.Services)
             .Where(d => idList.Contains(d.Id))
             .ToListAsync(cancellationToken);
 
@@ -83,7 +87,7 @@ public class DoctorRepository : IDoctorRepository
         cancellationToken.ThrowIfCancellationRequested();
 
         await _context.Doctors.AddAsync(doctor, cancellationToken);
-        
+
         await _context.SaveChangesAsync(cancellationToken);
 
         return Result<Doctor>.Success(doctor);
@@ -100,6 +104,17 @@ public class DoctorRepository : IDoctorRepository
         if (!exists)
         {
             return Result.Failure(DoctorErrors.NotFound(doctor.Id));
+        }
+
+        var existingServices = await _context.DoctorServices
+            .Where(s => s.DoctorId == doctor.Id)
+            .ToListAsync(cancellationToken);
+
+        _context.DoctorServices.RemoveRange(existingServices);
+
+        foreach (var service in doctor.Services)
+        {
+            service.DoctorId = doctor.Id;
         }
 
         _context.Doctors.Update(doctor);
@@ -124,7 +139,7 @@ public class DoctorRepository : IDoctorRepository
         }
 
         _context.Doctors.Remove(doctor);
-        
+
         await _context.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
@@ -137,7 +152,9 @@ public class DoctorRepository : IDoctorRepository
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var query = _context.Doctors.AsNoTracking();
+        var query = _context.Doctors
+            .AsNoTracking()
+            .Include(d => d.Services);
 
         var totalCount = await query.CountAsync(cancellationToken);
 
@@ -167,6 +184,7 @@ public class DoctorRepository : IDoctorRepository
 
         var query = _context.Doctors
             .AsNoTracking()
+            .Include(d => d.Services)
             .Where(d => d.SpecializationId == specializationId);
 
         var totalCount = await query.CountAsync(cancellationToken);
