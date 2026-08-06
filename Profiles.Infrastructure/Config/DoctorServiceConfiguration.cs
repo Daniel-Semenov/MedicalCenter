@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Profiles.Domain.Entities;
+using Profiles.Shared.Common.Constants;
 
 namespace Profiles.Infrastructure.Config;
 
@@ -14,7 +15,7 @@ public class DoctorServiceConfiguration : IEntityTypeConfiguration<DoctorService
 
         builder.Property(s => s.ServiceName)
             .IsRequired()
-            .HasMaxLength(200);
+            .HasMaxLength(FieldLengthConstants.ServiceNameMaxLength);
 
         builder.HasIndex(s => new { s.DoctorId, s.ServiceId })
             .IsUnique();
