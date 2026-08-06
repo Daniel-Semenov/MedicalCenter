@@ -18,6 +18,40 @@ public class CreateDoctorRequestValidator : AbstractValidator<CreateDoctorReques
             .NotEmpty();
 
         RuleFor(x => x.CareerStartYear)
-            .InclusiveBetween(ValidationConstants.MinCareerStartYear, DateTime.UtcNow.Year);
+            .InclusiveBetween(CareerConstants.MinCareerStartYear, DateTime.UtcNow.Year);
+
+        RuleFor(x => x.FirstName)
+            .NotEmpty()
+            .MaximumLength(FieldLengthConstants.NameMaxLength);
+
+        RuleFor(x => x.LastName)
+            .NotEmpty()
+            .MaximumLength(FieldLengthConstants.NameMaxLength);
+
+        RuleFor(x => x.MiddleName)
+            .MaximumLength(FieldLengthConstants.NameMaxLength);
+
+        RuleFor(x => x.OfficeName)
+            .NotEmpty()
+            .MaximumLength(FieldLengthConstants.OfficeNameMaxLength);
+
+        RuleFor(x => x.OfficeAddress)
+            .NotEmpty()
+            .MaximumLength(FieldLengthConstants.OfficeAddressMaxLength);
+
+        RuleFor(x => x.SpecializationName)
+            .NotEmpty()
+            .MaximumLength(FieldLengthConstants.SpecializationNameMaxLength);
+
+        RuleForEach(x => x.Services)
+            .ChildRules(service =>
+            {
+                service.RuleFor(s => s.ServiceId)
+                    .NotEmpty();
+
+                service.RuleFor(s => s.ServiceName)
+                    .NotEmpty()
+                    .MaximumLength(FieldLengthConstants.ServiceNameMaxLength);
+            });
     }
 }

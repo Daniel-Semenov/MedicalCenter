@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Profiles.Domain.Entities;
+using Profiles.Shared.Common.Constants;
 
 namespace Profiles.Infrastructure.Config;
 
@@ -13,28 +14,28 @@ public class ReceptionistConfiguration : IEntityTypeConfiguration<Receptionist>
         builder.HasKey(r => r.Id);
 
         builder.Property(r => r.PhotoUrl)
-            .HasMaxLength(500);
+            .HasMaxLength(FieldLengthConstants.PhotoUrlMaxLength);
 
         builder.Property(r => r.FirstName)
             .IsRequired()
-            .HasMaxLength(100);
+            .HasMaxLength(FieldLengthConstants.NameMaxLength);
 
         builder.Property(r => r.LastName)
             .IsRequired()
-            .HasMaxLength(100);
+            .HasMaxLength(FieldLengthConstants.NameMaxLength);
 
         builder.Property(r => r.MiddleName)
-            .HasMaxLength(100);
+            .HasMaxLength(FieldLengthConstants.NameMaxLength);
 
         builder.Property(r => r.Email)
             .IsRequired()
-            .HasMaxLength(256);
+            .HasMaxLength(FieldLengthConstants.EmailMaxLength);
 
         builder.Property(r => r.OfficeName)
-            .HasMaxLength(200);
+            .HasMaxLength(FieldLengthConstants.OfficeNameMaxLength);
 
         builder.Property(r => r.OfficeAddress)
-            .HasMaxLength(500);
+            .HasMaxLength(FieldLengthConstants.OfficeAddressMaxLength);
 
         builder.HasIndex(r => r.AccountId)
             .IsUnique();

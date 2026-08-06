@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Profiles.Domain.Entities;
-using Profiles.Infrastructure.Constants;
+using Profiles.Shared.Common.Constants;
 
 namespace Profiles.Infrastructure.Config;
 
@@ -18,30 +18,30 @@ public class DoctorConfiguration : IEntityTypeConfiguration<Doctor>
 
         builder.HasCheckConstraint(
             "CK_Doctor_CareerStartYear",
-            $"\"CareerStartYear\" >= {ConfigConstants.MinCareerStartYear} AND \"CareerStartYear\" <= {ConfigConstants.MaxCareerStartYear}");
+            $"\"CareerStartYear\" >= {CareerConstants.MinCareerStartYear} AND \"CareerStartYear\" <= {CareerConstants.MaxCareerStartYear}");
 
         builder.Property(d => d.PhotoUrl)
-            .HasMaxLength(500);
+            .HasMaxLength(FieldLengthConstants.PhotoUrlMaxLength);
 
         builder.Property(d => d.FirstName)
             .IsRequired()
-            .HasMaxLength(100);
+            .HasMaxLength(FieldLengthConstants.NameMaxLength);
 
         builder.Property(d => d.LastName)
             .IsRequired()
-            .HasMaxLength(100);
+            .HasMaxLength(FieldLengthConstants.NameMaxLength);
 
         builder.Property(d => d.MiddleName)
-            .HasMaxLength(100);
+            .HasMaxLength(FieldLengthConstants.NameMaxLength);
 
         builder.Property(d => d.OfficeName)
-            .HasMaxLength(200);
+            .HasMaxLength(FieldLengthConstants.OfficeNameMaxLength);
 
         builder.Property(d => d.OfficeAddress)
-            .HasMaxLength(500);
+            .HasMaxLength(FieldLengthConstants.OfficeAddressMaxLength);
 
         builder.Property(d => d.SpecializationName)
-            .HasMaxLength(200);
+            .HasMaxLength(FieldLengthConstants.SpecializationNameMaxLength);
 
         builder.HasIndex(d => d.AccountId)
             .IsUnique();
