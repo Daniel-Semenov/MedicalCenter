@@ -26,14 +26,7 @@ public class PatientService : IPatientService
             return Result<PatientResponseDto>.Failure(result.Error);
         }
 
-        var dto = new PatientResponseDto
-        {
-            Id = result.Value.Id,
-            AccountId = result.Value.AccountId,
-            IsLinkedToAccount = result.Value.IsLinkedToAccount
-        };
-
-        return Result<PatientResponseDto>.Success(dto);
+        return Result<PatientResponseDto>.Success(MapToDto(result.Value));
     }
 
     public async Task<Result<PatientResponseDto>> GetByAccountIdAsync(Guid accountId, CancellationToken cancellationToken = default)
@@ -45,14 +38,7 @@ public class PatientService : IPatientService
             return Result<PatientResponseDto>.Failure(result.Error);
         }
 
-        var dto = new PatientResponseDto
-        {
-            Id = result.Value.Id,
-            AccountId = result.Value.AccountId,
-            IsLinkedToAccount = result.Value.IsLinkedToAccount
-        };
-
-        return Result<PatientResponseDto>.Success(dto);
+        return Result<PatientResponseDto>.Success(MapToDto(result.Value));
     }
 
     public async Task<Result<PagedResult<PatientResponseDto>>> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default)
@@ -64,12 +50,7 @@ public class PatientService : IPatientService
             return Result<PagedResult<PatientResponseDto>>.Failure(result.Error);
         }
 
-        var items = result.Value.Items.Select(patient => new PatientResponseDto
-        {
-            Id = patient.Id,
-            AccountId = patient.AccountId,
-            IsLinkedToAccount = patient.IsLinkedToAccount
-        });
+        var items = result.Value.Items.Select(MapToDto);
 
         var pagedResult = new PagedResult<PatientResponseDto>
         {
@@ -88,7 +69,13 @@ public class PatientService : IPatientService
         {
             Id = Guid.NewGuid(),
             AccountId = request.AccountId,
-            IsLinkedToAccount = request.IsLinkedToAccount
+            IsLinkedToAccount = request.IsLinkedToAccount,
+            PhotoUrl = request.PhotoUrl,
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            MiddleName = request.MiddleName,
+            PhoneNumber = request.PhoneNumber,
+            DateOfBirth = request.DateOfBirth
         };
 
         var result = await _patientRepository.CreateAsync(patient, cancellationToken);
@@ -98,20 +85,12 @@ public class PatientService : IPatientService
             return Result<PatientResponseDto>.Failure(result.Error);
         }
 
-        var dto = new PatientResponseDto
-        {
-            Id = result.Value.Id,
-            AccountId = result.Value.AccountId,
-            IsLinkedToAccount = result.Value.IsLinkedToAccount
-        };
-
-        return Result<PatientResponseDto>.Success(dto);
+        return Result<PatientResponseDto>.Success(MapToDto(result.Value));
     }
 
     public async Task<Result<PatientResponseDto>> UpdateAsync(Guid id, UpdatePatientRequestDto request, CancellationToken cancellationToken = default)
     {
         var getResult = await _patientRepository.GetByIdAsync(id, cancellationToken);
-        
 
         if (!getResult.IsSuccess)
         {
@@ -120,6 +99,12 @@ public class PatientService : IPatientService
 
         var patient = getResult.Value;
         patient.IsLinkedToAccount = request.IsLinkedToAccount;
+        patient.PhotoUrl = request.PhotoUrl;
+        patient.FirstName = request.FirstName;
+        patient.LastName = request.LastName;
+        patient.MiddleName = request.MiddleName;
+        patient.PhoneNumber = request.PhoneNumber;
+        patient.DateOfBirth = request.DateOfBirth;
 
         var updateResult = await _patientRepository.UpdateAsync(patient, cancellationToken);
 
@@ -128,18 +113,24 @@ public class PatientService : IPatientService
             return Result<PatientResponseDto>.Failure(updateResult.Error);
         }
 
-        var dto = new PatientResponseDto
-        {
-            Id = patient.Id,
-            AccountId = patient.AccountId,
-            IsLinkedToAccount = patient.IsLinkedToAccount
-        };
-
-        return Result<PatientResponseDto>.Success(dto);
+        return Result<PatientResponseDto>.Success(MapToDto(patient));
     }
 
     public async Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _patientRepository.DeleteAsync(id, cancellationToken);
     }
+
+    private static PatientResponseDto MapToDto(Patient patient) => new()
+    {
+        Id = patient.Id,
+        AccountId = patient.AccountId,
+        IsLinkedToAccount = patient.IsLinkedToAccount,
+        PhotoUrl = patient.PhotoUrl,
+        FirstName = patient.FirstName,
+        LastName = patient.LastName,
+        MiddleName = patient.MiddleName,
+        PhoneNumber = patient.PhoneNumber,
+        DateOfBirth = patient.DateOfBirth
+    };
 }

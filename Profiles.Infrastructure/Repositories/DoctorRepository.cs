@@ -99,25 +99,28 @@ public class DoctorRepository : IDoctorRepository
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var exists = await _context.Doctors.AnyAsync(d => d.Id == doctor.Id, cancellationToken);
+        var existingDoctor = await _context.Doctors
+            .Include(d => d.Services)
+            .FirstOrDefaultAsync(d => d.Id == doctor.Id, cancellationToken);
 
-        if (!exists)
+        if (existingDoctor is null)
         {
             return Result.Failure(DoctorErrors.NotFound(doctor.Id));
         }
 
-        var existingServices = await _context.DoctorServices
-            .Where(s => s.DoctorId == doctor.Id)
-            .ToListAsync(cancellationToken);
+        _context.Entry(existingDoctor).CurrentValues.SetValues(doctor);
 
-        _context.DoctorServices.RemoveRange(existingServices);
+        _context.DoctorServices.RemoveRange(existingDoctor.Services);
 
-        foreach (var service in doctor.Services)
+        var newServices = doctor.Services.Select(s => new DoctorService
         {
-            service.DoctorId = doctor.Id;
-        }
+            Id = Guid.NewGuid(),
+            DoctorId = doctor.Id,
+            ServiceId = s.ServiceId,
+            ServiceName = s.ServiceName
+        }).ToList();
 
-        _context.Doctors.Update(doctor);
+        await _context.DoctorServices.AddRangeAsync(newServices, cancellationToken);
 
         await _context.SaveChangesAsync(cancellationToken);
 

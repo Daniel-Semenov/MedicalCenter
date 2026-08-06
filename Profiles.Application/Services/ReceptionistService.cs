@@ -26,14 +26,7 @@ public class ReceptionistService : IReceptionistService
             return Result<ReceptionistResponseDto>.Failure(result.Error);
         }
 
-        var dto = new ReceptionistResponseDto
-        {
-            Id = result.Value.Id,
-            AccountId = result.Value.AccountId,
-            OfficeId = result.Value.OfficeId
-        };
-
-        return Result<ReceptionistResponseDto>.Success(dto);
+        return Result<ReceptionistResponseDto>.Success(MapToDto(result.Value));
     }
 
     public async Task<Result<ReceptionistResponseDto>> GetByAccountIdAsync(Guid accountId, CancellationToken cancellationToken = default)
@@ -45,14 +38,7 @@ public class ReceptionistService : IReceptionistService
             return Result<ReceptionistResponseDto>.Failure(result.Error);
         }
 
-        var dto = new ReceptionistResponseDto
-        {
-            Id = result.Value.Id,
-            AccountId = result.Value.AccountId,
-            OfficeId = result.Value.OfficeId
-        };
-
-        return Result<ReceptionistResponseDto>.Success(dto);
+        return Result<ReceptionistResponseDto>.Success(MapToDto(result.Value));
     }
 
     public async Task<Result<PagedResult<ReceptionistResponseDto>>> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default)
@@ -64,12 +50,7 @@ public class ReceptionistService : IReceptionistService
             return Result<PagedResult<ReceptionistResponseDto>>.Failure(result.Error);
         }
 
-        var items = result.Value.Items.Select(receptionist => new ReceptionistResponseDto
-        {
-            Id = receptionist.Id,
-            AccountId = receptionist.AccountId,
-            OfficeId = receptionist.OfficeId
-        });
+        var items = result.Value.Items.Select(MapToDto);
 
         var pagedResult = new PagedResult<ReceptionistResponseDto>
         {
@@ -88,7 +69,14 @@ public class ReceptionistService : IReceptionistService
         {
             Id = Guid.NewGuid(),
             AccountId = request.AccountId,
-            OfficeId = request.OfficeId
+            OfficeId = request.OfficeId,
+            PhotoUrl = request.PhotoUrl,
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            MiddleName = request.MiddleName,
+            Email = request.Email,
+            OfficeName = request.OfficeName,
+            OfficeAddress = request.OfficeAddress
         };
 
         var result = await _receptionistRepository.CreateAsync(receptionist, cancellationToken);
@@ -98,14 +86,7 @@ public class ReceptionistService : IReceptionistService
             return Result<ReceptionistResponseDto>.Failure(result.Error);
         }
 
-        var dto = new ReceptionistResponseDto
-        {
-            Id = result.Value.Id,
-            AccountId = result.Value.AccountId,
-            OfficeId = result.Value.OfficeId
-        };
-
-        return Result<ReceptionistResponseDto>.Success(dto);
+        return Result<ReceptionistResponseDto>.Success(MapToDto(result.Value));
     }
 
     public async Task<Result<ReceptionistResponseDto>> UpdateAsync(Guid id, UpdateReceptionistRequestDto request, CancellationToken cancellationToken = default)
@@ -119,6 +100,13 @@ public class ReceptionistService : IReceptionistService
 
         var receptionist = getResult.Value;
         receptionist.OfficeId = request.OfficeId;
+        receptionist.PhotoUrl = request.PhotoUrl;
+        receptionist.FirstName = request.FirstName;
+        receptionist.LastName = request.LastName;
+        receptionist.MiddleName = request.MiddleName;
+        receptionist.Email = request.Email;
+        receptionist.OfficeName = request.OfficeName;
+        receptionist.OfficeAddress = request.OfficeAddress;
 
         var updateResult = await _receptionistRepository.UpdateAsync(receptionist, cancellationToken);
 
@@ -127,18 +115,25 @@ public class ReceptionistService : IReceptionistService
             return Result<ReceptionistResponseDto>.Failure(updateResult.Error);
         }
 
-        var dto = new ReceptionistResponseDto
-        {
-            Id = receptionist.Id,
-            AccountId = receptionist.AccountId,
-            OfficeId = receptionist.OfficeId
-        };
-
-        return Result<ReceptionistResponseDto>.Success(dto);
+        return Result<ReceptionistResponseDto>.Success(MapToDto(receptionist));
     }
 
     public async Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _receptionistRepository.DeleteAsync(id, cancellationToken);
     }
+
+    private static ReceptionistResponseDto MapToDto(Receptionist receptionist) => new()
+    {
+        Id = receptionist.Id,
+        AccountId = receptionist.AccountId,
+        OfficeId = receptionist.OfficeId,
+        PhotoUrl = receptionist.PhotoUrl,
+        FirstName = receptionist.FirstName,
+        LastName = receptionist.LastName,
+        MiddleName = receptionist.MiddleName,
+        Email = receptionist.Email,
+        OfficeName = receptionist.OfficeName,
+        OfficeAddress = receptionist.OfficeAddress
+    };
 }

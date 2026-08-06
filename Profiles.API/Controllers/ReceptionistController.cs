@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Profiles.Application.DTO_s.Request;
 using Profiles.Application.Interfaces.Services;
+using Profiles.Shared.Common.Constants;
 
 namespace Profiles.API.Controllers;
 
@@ -37,8 +38,8 @@ public class ReceptionistsController : ControllerBase
 
     [HttpGet]
     public async Task<IActionResult> GetPaged(
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10,
+        [FromQuery] int page = PaginationConstants.DefaultPage,
+        [FromQuery] int pageSize = PaginationConstants.DefaultPageSize,
         CancellationToken cancellationToken = default)
     {
         var result = await _receptionistService.GetPagedAsync(page, pageSize, cancellationToken);

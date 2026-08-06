@@ -26,14 +26,7 @@ public class DoctorService : IDoctorService
             return Result<DoctorResponseDto>.Failure(result.Error);
         }
 
-        return Result<DoctorResponseDto>.Success(new DoctorResponseDto
-        {
-            Id = result.Value.Id,
-            AccountId = result.Value.AccountId,
-            SpecializationId = result.Value.SpecializationId,
-            OfficeId = result.Value.OfficeId,
-            CareerStartYear = result.Value.CareerStartYear
-        });
+        return Result<DoctorResponseDto>.Success(MapToDto(result.Value));
     }
 
     public async Task<Result<DoctorResponseDto>> GetByAccountIdAsync(Guid accountId, CancellationToken cancellationToken = default)
@@ -45,14 +38,7 @@ public class DoctorService : IDoctorService
             return Result<DoctorResponseDto>.Failure(result.Error);
         }
 
-        return Result<DoctorResponseDto>.Success(new DoctorResponseDto
-        {
-            Id = result.Value.Id,
-            AccountId = result.Value.AccountId,
-            SpecializationId = result.Value.SpecializationId,
-            OfficeId = result.Value.OfficeId,
-            CareerStartYear = result.Value.CareerStartYear
-        });
+        return Result<DoctorResponseDto>.Success(MapToDto(result.Value));
     }
 
     public async Task<Result<PagedResult<DoctorResponseDto>>> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default)
@@ -64,14 +50,7 @@ public class DoctorService : IDoctorService
             return Result<PagedResult<DoctorResponseDto>>.Failure(result.Error);
         }
 
-        var items = result.Value.Items.Select(d => new DoctorResponseDto
-        {
-            Id = d.Id,
-            AccountId = d.AccountId,
-            SpecializationId = d.SpecializationId,
-            OfficeId = d.OfficeId,
-            CareerStartYear = d.CareerStartYear
-        });
+        var items = result.Value.Items.Select(MapToDto);
 
         var pagedResult = new PagedResult<DoctorResponseDto>
         {
@@ -93,14 +72,7 @@ public class DoctorService : IDoctorService
             return Result<PagedResult<DoctorResponseDto>>.Failure(result.Error);
         }
 
-        var items = result.Value.Items.Select(d => new DoctorResponseDto
-        {
-            Id = d.Id,
-            AccountId = d.AccountId,
-            SpecializationId = d.SpecializationId,
-            OfficeId = d.OfficeId,
-            CareerStartYear = d.CareerStartYear
-        });
+        var items = result.Value.Items.Select(MapToDto);
 
         var pagedResult = new PagedResult<DoctorResponseDto>
         {
@@ -115,13 +87,29 @@ public class DoctorService : IDoctorService
 
     public async Task<Result<DoctorResponseDto>> CreateAsync(CreateDoctorRequestDto request, CancellationToken cancellationToken = default)
     {
+        var doctorId = Guid.NewGuid();
+
         var doctor = new Doctor
         {
-            Id = Guid.NewGuid(),
+            Id = doctorId,
             AccountId = request.AccountId,
             SpecializationId = request.SpecializationId,
             OfficeId = request.OfficeId,
-            CareerStartYear = request.CareerStartYear
+            CareerStartYear = request.CareerStartYear,
+            PhotoUrl = request.PhotoUrl,
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            MiddleName = request.MiddleName,
+            OfficeName = request.OfficeName,
+            OfficeAddress = request.OfficeAddress,
+            SpecializationName = request.SpecializationName,
+            Services = request.Services.Select(s => new Domain.Entities.DoctorService
+            {
+                Id = Guid.NewGuid(),
+                DoctorId = doctorId,
+                ServiceId = s.ServiceId,
+                ServiceName = s.ServiceName
+            }).ToList()
         };
 
         var result = await _doctorRepository.CreateAsync(doctor, cancellationToken);
@@ -131,14 +119,7 @@ public class DoctorService : IDoctorService
             return Result<DoctorResponseDto>.Failure(result.Error);
         }
 
-        return Result<DoctorResponseDto>.Success(new DoctorResponseDto
-        {
-            Id = result.Value.Id,
-            AccountId = result.Value.AccountId,
-            SpecializationId = result.Value.SpecializationId,
-            OfficeId = result.Value.OfficeId,
-            CareerStartYear = result.Value.CareerStartYear
-        });
+        return Result<DoctorResponseDto>.Success(MapToDto(result.Value));
     }
 
     public async Task<Result<DoctorResponseDto>> UpdateAsync(Guid id, UpdateDoctorRequestDto request, CancellationToken cancellationToken = default)
@@ -154,6 +135,20 @@ public class DoctorService : IDoctorService
         doctor.SpecializationId = request.SpecializationId;
         doctor.OfficeId = request.OfficeId;
         doctor.CareerStartYear = request.CareerStartYear;
+        doctor.PhotoUrl = request.PhotoUrl;
+        doctor.FirstName = request.FirstName;
+        doctor.LastName = request.LastName;
+        doctor.MiddleName = request.MiddleName;
+        doctor.OfficeName = request.OfficeName;
+        doctor.OfficeAddress = request.OfficeAddress;
+        doctor.SpecializationName = request.SpecializationName;
+        doctor.Services = request.Services.Select(s => new Domain.Entities.DoctorService
+        {
+            Id = Guid.NewGuid(),
+            DoctorId = doctor.Id,
+            ServiceId = s.ServiceId,
+            ServiceName = s.ServiceName
+        }).ToList();
 
         var updateResult = await _doctorRepository.UpdateAsync(doctor, cancellationToken);
 
@@ -162,18 +157,33 @@ public class DoctorService : IDoctorService
             return Result<DoctorResponseDto>.Failure(updateResult.Error);
         }
 
-        return Result<DoctorResponseDto>.Success(new DoctorResponseDto
-        {
-            Id = doctor.Id,
-            AccountId = doctor.AccountId,
-            SpecializationId = doctor.SpecializationId,
-            OfficeId = doctor.OfficeId,
-            CareerStartYear = doctor.CareerStartYear
-        });
+        return Result<DoctorResponseDto>.Success(MapToDto(doctor));
     }
 
     public async Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _doctorRepository.DeleteAsync(id, cancellationToken);
     }
+
+    private static DoctorResponseDto MapToDto(Doctor doctor) => new()
+    {
+        Id = doctor.Id,
+        AccountId = doctor.AccountId,
+        SpecializationId = doctor.SpecializationId,
+        OfficeId = doctor.OfficeId,
+        CareerStartYear = doctor.CareerStartYear,
+        Experience = DateTime.UtcNow.Year - doctor.CareerStartYear,
+        PhotoUrl = doctor.PhotoUrl,
+        FirstName = doctor.FirstName,
+        LastName = doctor.LastName,
+        MiddleName = doctor.MiddleName,
+        OfficeName = doctor.OfficeName,
+        OfficeAddress = doctor.OfficeAddress,
+        SpecializationName = doctor.SpecializationName,
+        Services = doctor.Services.Select(s => new DoctorServiceResponseDto
+        {
+            ServiceId = s.ServiceId,
+            ServiceName = s.ServiceName
+        }).ToList()
+    };
 }
