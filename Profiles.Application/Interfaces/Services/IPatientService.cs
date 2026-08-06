@@ -8,6 +8,7 @@ namespace Profiles.Application.Interfaces.Services;
 public interface IPatientService
 {
     Task<Result<PatientResponseDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Result<PatientResponseDto>> GetByNameAsync(string searchTerm, CancellationToken cancellationToken = default);
     Task<Result<PatientResponseDto>> GetByAccountIdAsync(Guid accountId, CancellationToken cancellationToken = default);
     Task<Result<PagedResult<PatientResponseDto>>> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default);
     Task<Result<PatientResponseDto>> CreateAsync(CreatePatientRequestDto request, CancellationToken cancellationToken = default);

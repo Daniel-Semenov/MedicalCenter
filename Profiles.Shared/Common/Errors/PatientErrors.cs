@@ -9,6 +9,12 @@ public static class PatientErrors
             "PATIENT_NOT_FOUND",
             $"Patient with ID {id} not found.",
             StatusCodes.Status404NotFound);
+    
+    public static Error NotFound(string searchTerm) =>
+        new(
+            "PATIENT_NOT_FOUND",
+            $"Patient with Name {searchTerm} not found.",
+            StatusCodes.Status404NotFound);
 
     public static Error AccountNotFound(Guid accountId) =>
         new(

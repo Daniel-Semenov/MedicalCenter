@@ -28,6 +28,18 @@ public class PatientService : IPatientService
 
         return Result<PatientResponseDto>.Success(MapToDto(result.Value));
     }
+    
+    public async Task<Result<PatientResponseDto>> GetByNameAsync(string searchTerm, CancellationToken cancellationToken = default)
+    {
+        var result = await _patientRepository.GetByNameAsync(searchTerm, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return Result<PatientResponseDto>.Failure(result.Error);
+        }
+
+        return Result<PatientResponseDto>.Success(MapToDto(result.Value));
+    }
 
     public async Task<Result<PatientResponseDto>> GetByAccountIdAsync(Guid accountId, CancellationToken cancellationToken = default)
     {

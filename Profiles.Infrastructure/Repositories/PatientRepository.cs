@@ -30,6 +30,29 @@ public class PatientRepository : IPatientRepository
 
         return Result<Patient>.Success(patient);
     }
+    
+    public async Task<Result<Patient>> GetByNameAsync(string searchTerm, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            return Result<Patient>.Failure(PatientErrors.NotFound(searchTerm));
+        }
+
+        var patient = await _context.Patients
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p =>
+                    EF.Functions.ILike(p.FirstName, $"%{searchTerm}%") ||
+                    EF.Functions.ILike(p.LastName, $"%{searchTerm}%") ||
+                    EF.Functions.ILike(p.FirstName + " " + p.LastName, $"%{searchTerm}%"),
+                cancellationToken);
+
+        if (patient is null)
+        {
+            return Result<Patient>.Failure(PatientErrors.NotFound(searchTerm));
+        }
+
+        return Result<Patient>.Success(patient);
+    }
 
     public async Task<Result<Patient>> GetByAccountIdAsync(Guid accountId, CancellationToken cancellationToken = default)
     {

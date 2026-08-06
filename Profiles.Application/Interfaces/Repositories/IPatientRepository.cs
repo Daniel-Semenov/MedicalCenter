@@ -8,6 +8,7 @@ namespace Profiles.Application.Interfaces.Repositories;
 public interface IPatientRepository
 {
     Task<Result<Patient>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Result<Patient>> GetByNameAsync(string searchTerm, CancellationToken cancellationToken = default);
     Task<Result<Patient>> GetByAccountIdAsync(Guid accountId, CancellationToken cancellationToken = default);
     Task<Result<IEnumerable<Patient>>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default);
     Task<Result<Patient>> CreateAsync(Patient patient, CancellationToken cancellationToken = default);

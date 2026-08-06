@@ -25,7 +25,16 @@ public class PatientsController : ControllerBase
 
         return result.IsSuccess ? Ok(result.Value) : NotFound(result.Error);
     }
-
+    
+    [HttpGet("search")]
+    public async Task<IActionResult> GetByName(
+        [FromQuery] string searchTerm,
+        CancellationToken cancellationToken)
+    {
+        var result = await _patientService.GetByNameAsync(searchTerm, cancellationToken);
+        return result.IsSuccess ? Ok(result.Value) : NotFound(result.Error);
+    }
+    
     [HttpGet("account/{accountId:guid}")]
     public async Task<IActionResult> GetByAccountId(
         Guid accountId,
