@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using Services.Domain.Entities;
 
 namespace Services.Infrastructure.Data;
@@ -7,7 +8,6 @@ public class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
-        
     }
 
     public DbSet<Specialization> Specializations { get; set; }
@@ -47,5 +47,9 @@ public class AppDbContext : DbContext
                 .HasForeignKey(e => e.SpecializationId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+
+        modelBuilder.AddInboxStateEntity();
+        modelBuilder.AddOutboxMessageEntity();
+        modelBuilder.AddOutboxStateEntity();
     }
 }
