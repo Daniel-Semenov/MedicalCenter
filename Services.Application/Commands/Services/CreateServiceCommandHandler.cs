@@ -30,6 +30,13 @@ public class CreateServiceCommandHandler : IRequestHandler<CreateServiceCommand,
         {
             throw new NotFoundException(nameof(Specialization), request.SpecializationId);
         }
+        
+        var exists = await _serviceRepository.ExistsByNameAndSpecializationAsync(request.Name, request.SpecializationId, cancellationToken);
+    
+        if (exists)
+        {
+            throw new ExistsByNameAndSpecializationException(request.Name, request.SpecializationId);
+        }
 
         var service = new Service
         {

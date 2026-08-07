@@ -71,7 +71,17 @@ public class SpecializationRepository : ISpecializationRepository
 
         return Task.CompletedTask;
     }
+    
+    public async Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken)
+    {
+        return await _context.Specializations.AnyAsync(s => s.Name == name, cancellationToken);
+    }
 
+    public async Task<bool> ExistsByNameAsync(string name, Guid excludeId, CancellationToken cancellationToken)
+    {
+        return await _context.Specializations.AnyAsync(s => s.Name == name && s.Id != excludeId, cancellationToken);
+    }
+    
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken)
     {
         return _context.SaveChangesAsync(cancellationToken);

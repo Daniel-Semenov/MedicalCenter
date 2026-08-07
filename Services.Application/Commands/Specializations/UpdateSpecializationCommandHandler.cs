@@ -27,6 +27,13 @@ public class UpdateSpecializationCommandHandler : IRequestHandler<UpdateSpeciali
         {
             throw new NotFoundException(nameof(Specialization), request.Id);
         }
+        
+        var exists = await _specializationRepository.ExistsByNameAsync(request.Name, request.Id, cancellationToken);
+
+        if (exists)
+        {
+            throw new SpecializationAlreadyExistsException(request.Name);
+        }
 
         specialization.Name = request.Name;
         specialization.Status = request.Status;

@@ -2,6 +2,7 @@
 using Services.Application.Interfaces;
 using Services.Application.Notifications.Specializations;
 using Services.Domain.Entities;
+using Services.Domain.Exceptions;
 
 namespace Services.Application.Commands.Specializations;
 
@@ -20,6 +21,25 @@ public class CreateSpecializationCommandHandler : IRequestHandler<CreateSpeciali
 
     public async Task<Guid> Handle(CreateSpecializationCommand request, CancellationToken cancellationToken)
     {
+        
+        var specializationExists = await _specializationRepository.ExistsByNameAsync(request.Name, cancellationToken);
+        
+        if (specializationExists)
+        {
+            throw new SpecializationAlreadyExistsException(request.Name);
+        }
+
+        var duplicateServices = request.Services
+            .GroupBy(s => s.Name)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .ToList();
+
+        if (duplicateServices.Any())
+        {
+            throw new DuplicateServiceNamesException(duplicateServices);
+        }
+        
         var specialization = new Specialization
         {
             Id = Guid.NewGuid(),

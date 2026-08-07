@@ -72,6 +72,19 @@ public class ServiceRepository : IServiceRepository
         return Task.CompletedTask;
     }
 
+    public async Task<bool> ExistsByNameAndSpecializationAsync(string name, Guid specializationId, Guid excludeId, CancellationToken cancellationToken)
+    {
+        return await _context.Services
+            .AnyAsync(s => s.Name == name && s.SpecializationId == specializationId && s.Id != excludeId, cancellationToken);
+    }
+    
+    public async Task<bool> ExistsByNameAndSpecializationAsync(string name, Guid specializationId, CancellationToken cancellationToken)
+    {
+        return await _context.Services
+            .AnyAsync(s => s.Name == name && s.SpecializationId == specializationId, cancellationToken);
+    }
+    
+
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken)
     {
         return _context.SaveChangesAsync(cancellationToken);

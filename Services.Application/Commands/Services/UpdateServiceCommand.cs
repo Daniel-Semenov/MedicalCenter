@@ -9,4 +9,6 @@ public class UpdateServiceCommand : IRequest<Unit>
     public string Name { get; set; } = null!;
     public decimal Price { get; set; }
     public ServiceStatus Status { get; set; }
+    public Guid SpecializationId { get; set; }
+    
 }

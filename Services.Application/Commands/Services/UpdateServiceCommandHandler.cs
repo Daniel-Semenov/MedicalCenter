@@ -28,6 +28,13 @@ public class UpdateServiceCommandHandler : IRequestHandler<UpdateServiceCommand,
         {
             throw new NotFoundException(nameof(Service), request.Id);
         }
+        
+        var exists = await _serviceRepository.ExistsByNameAndSpecializationAsync(request.Name, request.SpecializationId, cancellationToken);
+    
+        if (exists)
+        {
+            throw new ExistsByNameAndSpecializationException(request.Name, request.SpecializationId);
+        }
 
         service.Name = request.Name;
         service.Price = request.Price;

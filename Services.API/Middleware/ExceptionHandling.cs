@@ -66,7 +66,7 @@ public class ExceptionHandling
             
             case NotFoundException ex:
                 response.StatusCode = (int)HttpStatusCode.NotFound;
-                problemDetails.Title = "Office not found";
+                problemDetails.Title = "Resource not found";
                 problemDetails.Status = (int)HttpStatusCode.NotFound;
                 problemDetails.Detail = ex.Message;
                 
@@ -105,6 +105,40 @@ public class ExceptionHandling
                 
                 _logger.LogWarning("Unauthorized access: {Message}. Path: {Path}, TraceId: {TraceId}", 
                     ex.Message, context.Request.Path, context.TraceIdentifier);
+                break;
+            
+            case ExistsByNameAndSpecializationException ex:
+                response.StatusCode = (int)HttpStatusCode.Conflict;
+                problemDetails.Title = "Duplicate service";
+                problemDetails.Status = (int)HttpStatusCode.Conflict;
+                problemDetails.Detail = ex.Message;
+    
+                _logger.LogWarning(ex, 
+                    "Duplicate service: {Message}. Path: {Path}, TraceId: {TraceId}", 
+                    ex.Message, context.Request.Path, context.TraceIdentifier);
+                break;
+
+            case SpecializationAlreadyExistsException ex:
+                response.StatusCode = (int)HttpStatusCode.Conflict;
+                problemDetails.Title = "Duplicate specialization";
+                problemDetails.Status = (int)HttpStatusCode.Conflict;
+                problemDetails.Detail = ex.Message;
+    
+                _logger.LogWarning(ex, 
+                    "Duplicate specialization: {Message}. Path: {Path}, TraceId: {TraceId}", 
+                    ex.Message, context.Request.Path, context.TraceIdentifier);
+                break;
+
+            case DuplicateServiceNamesException ex:
+                response.StatusCode = (int)HttpStatusCode.Conflict;
+                problemDetails.Title = "Duplicate service names";
+                problemDetails.Status = (int)HttpStatusCode.Conflict;
+                problemDetails.Detail = ex.Message;
+                problemDetails.Extensions["duplicateNames"] = ex.Names;
+    
+                _logger.LogWarning(ex, 
+                    "Duplicate service names: {Names}. Path: {Path}, TraceId: {TraceId}", 
+                    ex.Names, context.Request.Path, context.TraceIdentifier);
                 break;
 
             default:
