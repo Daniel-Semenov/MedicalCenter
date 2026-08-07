@@ -12,4 +12,5 @@ public interface ISpecializationRepository
     Task AddAsync(Specialization specialization, CancellationToken cancellationToken);
     Task UpdateAsync(Specialization specialization, CancellationToken cancellationToken);
     Task DeleteAsync(Specialization specialization, CancellationToken cancellationToken);
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using Services.Application.Interfaces;
+using Services.Application.Notifications.Services;
 using Services.Domain.Entities;
 using Services.Domain.Exceptions;
 
@@ -9,13 +10,16 @@ public class CreateServiceCommandHandler : IRequestHandler<CreateServiceCommand,
 {
     private readonly IServiceRepository _serviceRepository;
     private readonly ISpecializationRepository _specializationRepository;
+    private readonly IPublisher _publisher;
 
     public CreateServiceCommandHandler(
         IServiceRepository serviceRepository,
-        ISpecializationRepository specializationRepository)
+        ISpecializationRepository specializationRepository,
+        IPublisher publisher)
     {
         _serviceRepository = serviceRepository;
         _specializationRepository = specializationRepository;
+        _publisher = publisher;
     }
 
     public async Task<Guid> Handle(CreateServiceCommand request, CancellationToken cancellationToken)
@@ -39,6 +43,10 @@ public class CreateServiceCommandHandler : IRequestHandler<CreateServiceCommand,
         };
 
         await _serviceRepository.AddAsync(service, cancellationToken);
+
+        await _publisher.Publish(new ServiceCreatedNotification(service), cancellationToken);
+
+        await _serviceRepository.SaveChangesAsync(cancellationToken);
 
         return service.Id;
     }

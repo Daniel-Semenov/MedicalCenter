@@ -31,7 +31,7 @@ public class SpecializationRepository : ISpecializationRepository
             .Take(pageSize)
             .ToListAsync(cancellationToken);
     }
-    
+
     public async Task<List<Specialization>> GetWithConsultationsAsync(int pageNumber, int pageSize, CancellationToken cancellationToken)
     {
         return await _context.Specializations
@@ -56,21 +56,24 @@ public class SpecializationRepository : ISpecializationRepository
     public async Task AddAsync(Specialization specialization, CancellationToken cancellationToken)
     {
         await _context.Specializations.AddAsync(specialization, cancellationToken);
-        
-        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(Specialization specialization, CancellationToken cancellationToken)
+    public Task UpdateAsync(Specialization specialization, CancellationToken cancellationToken)
     {
         _context.Specializations.Update(specialization);
-        
-        await _context.SaveChangesAsync(cancellationToken);
+
+        return Task.CompletedTask;
     }
 
-    public async Task DeleteAsync(Specialization specialization, CancellationToken cancellationToken)
+    public Task DeleteAsync(Specialization specialization, CancellationToken cancellationToken)
     {
         _context.Specializations.Remove(specialization);
-        
-        await _context.SaveChangesAsync(cancellationToken);
+
+        return Task.CompletedTask;
+    }
+
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken)
+    {
+        return _context.SaveChangesAsync(cancellationToken);
     }
 }

@@ -1,16 +1,21 @@
 ﻿using MediatR;
 using Services.Application.Interfaces;
+using Services.Application.Notifications.Specializations;
 using Services.Domain.Entities;
 
-namespace Services.Application.Commands.Specializations.CreateSpecialization;
+namespace Services.Application.Commands.Specializations;
 
 public class CreateSpecializationCommandHandler : IRequestHandler<CreateSpecializationCommand, Guid>
 {
     private readonly ISpecializationRepository _specializationRepository;
+    private readonly IPublisher _publisher;
 
-    public CreateSpecializationCommandHandler(ISpecializationRepository specializationRepository)
+    public CreateSpecializationCommandHandler(
+        ISpecializationRepository specializationRepository,
+        IPublisher publisher)
     {
         _specializationRepository = specializationRepository;
+        _publisher = publisher;
     }
 
     public async Task<Guid> Handle(CreateSpecializationCommand request, CancellationToken cancellationToken)
@@ -33,7 +38,11 @@ public class CreateSpecializationCommandHandler : IRequestHandler<CreateSpeciali
         };
 
         await _specializationRepository.AddAsync(specialization, cancellationToken);
-        
+
+        await _publisher.Publish(new SpecializationCreatedNotification(specialization), cancellationToken);
+
+        await _specializationRepository.SaveChangesAsync(cancellationToken);
+
         return specialization.Id;
     }
 }

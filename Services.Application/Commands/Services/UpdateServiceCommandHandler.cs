@@ -1,5 +1,7 @@
 ﻿using MediatR;
 using Services.Application.Interfaces;
+using Services.Application.Notifications;
+using Services.Application.Notifications.Services;
 using Services.Domain.Entities;
 using Services.Domain.Exceptions;
 
@@ -8,10 +10,14 @@ namespace Services.Application.Commands.Services;
 public class UpdateServiceCommandHandler : IRequestHandler<UpdateServiceCommand, Unit>
 {
     private readonly IServiceRepository _serviceRepository;
+    private readonly IPublisher _publisher;
 
-    public UpdateServiceCommandHandler(IServiceRepository serviceRepository)
+    public UpdateServiceCommandHandler(
+        IServiceRepository serviceRepository,
+        IPublisher publisher)
     {
         _serviceRepository = serviceRepository;
+        _publisher = publisher;
     }
 
     public async Task<Unit> Handle(UpdateServiceCommand request, CancellationToken cancellationToken)
@@ -29,6 +35,10 @@ public class UpdateServiceCommandHandler : IRequestHandler<UpdateServiceCommand,
         service.UpdatedAt = DateTime.UtcNow;
 
         await _serviceRepository.UpdateAsync(service, cancellationToken);
+
+        await _publisher.Publish(new ServiceUpdatedNotification(service), cancellationToken);
+
+        await _serviceRepository.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;
     }

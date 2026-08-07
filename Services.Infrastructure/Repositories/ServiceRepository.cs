@@ -31,7 +31,7 @@ public class ServiceRepository : IServiceRepository
             .Take(pageSize)
             .ToListAsync(cancellationToken);
     }
-    
+
     public async Task<List<Service>> GetByCategoryAsync(ServiceCategory category, int pageNumber, int pageSize, CancellationToken cancellationToken)
     {
         return await _context.Services
@@ -56,21 +56,24 @@ public class ServiceRepository : IServiceRepository
     public async Task AddAsync(Service service, CancellationToken cancellationToken)
     {
         await _context.Services.AddAsync(service, cancellationToken);
-        
-        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task UpdateAsync(Service service, CancellationToken cancellationToken)
+    public Task UpdateAsync(Service service, CancellationToken cancellationToken)
     {
         _context.Services.Update(service);
-        
-        await _context.SaveChangesAsync(cancellationToken);
+
+        return Task.CompletedTask;
     }
 
-    public async Task DeleteAsync(Service service, CancellationToken cancellationToken)
+    public Task DeleteAsync(Service service, CancellationToken cancellationToken)
     {
         _context.Services.Remove(service);
-        
-        await _context.SaveChangesAsync(cancellationToken);
+
+        return Task.CompletedTask;
+    }
+
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken)
+    {
+        return _context.SaveChangesAsync(cancellationToken);
     }
 }

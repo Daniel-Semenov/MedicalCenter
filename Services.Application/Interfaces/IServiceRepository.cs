@@ -13,4 +13,5 @@ public interface IServiceRepository
     Task AddAsync(Service service, CancellationToken cancellationToken);
     Task UpdateAsync(Service service, CancellationToken cancellationToken);
     Task DeleteAsync(Service service, CancellationToken cancellationToken);
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

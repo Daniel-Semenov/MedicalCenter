@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using Services.Application.Interfaces;
+using Services.Application.Notifications.Specializations;
 using Services.Domain.Entities;
 using Services.Domain.Exceptions;
 
@@ -8,10 +9,14 @@ namespace Services.Application.Commands.Specializations;
 public class UpdateSpecializationCommandHandler : IRequestHandler<UpdateSpecializationCommand, Unit>
 {
     private readonly ISpecializationRepository _specializationRepository;
+    private readonly IPublisher _publisher;
 
-    public UpdateSpecializationCommandHandler(ISpecializationRepository specializationRepository)
+    public UpdateSpecializationCommandHandler(
+        ISpecializationRepository specializationRepository,
+        IPublisher publisher)
     {
         _specializationRepository = specializationRepository;
+        _publisher = publisher;
     }
 
     public async Task<Unit> Handle(UpdateSpecializationCommand request, CancellationToken cancellationToken)
@@ -28,7 +33,11 @@ public class UpdateSpecializationCommandHandler : IRequestHandler<UpdateSpeciali
         specialization.UpdatedAt = DateTime.UtcNow;
 
         await _specializationRepository.UpdateAsync(specialization, cancellationToken);
-        
+
+        await _publisher.Publish(new SpecializationUpdatedNotification(specialization), cancellationToken);
+
+        await _specializationRepository.SaveChangesAsync(cancellationToken);
+
         return Unit.Value;
     }
 }
