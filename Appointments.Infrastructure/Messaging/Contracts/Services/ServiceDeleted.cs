@@ -1,0 +1,7 @@
+﻿namespace Appointments.Infrastructure.Messaging.Contracts.Services;
+
+public record ServiceDeleted
+{
+    public Guid Id { get; init; }
+    public DateTime DeletedAt { get; init; }
+}
