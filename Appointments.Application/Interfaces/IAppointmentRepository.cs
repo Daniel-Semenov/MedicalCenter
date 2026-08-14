@@ -1,4 +1,5 @@
-﻿using Appointments.Domain.Entities;
+﻿using Appointments.Application.DTO_s.Response.Appointment;
+using Appointments.Domain.Entities;
 using Appointments.Shared.Common.Pagination;
 using Appointments.Shared.Common.Results;
 
@@ -12,5 +13,8 @@ public interface IAppointmentRepository
     Task<Result<bool>> IsSlotTakenAsync(Guid doctorId, DateTime appointmentDate, DateTime startTime, Guid? excludeAppointmentId = null, CancellationToken cancellationToken = default);
     Task<Result<Appointment>> AddAsync(Appointment appointment, CancellationToken cancellationToken = default);
     Task<Result> UpdateAsync(Appointment appointment, CancellationToken cancellationToken = default);
+    Task<AppointmentDetailsDto?> GetAppointmentDetailsAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<PagedResult<AppointmentListItemDto>> GetAppointmentListItemsByDoctorAsync(Guid doctorId, int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<PagedResult<AppointmentListItemDto>> GetAppointmentListItemsByPatientAsync(Guid patientId, int page, int pageSize, CancellationToken cancellationToken = default);
     Task<Result> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
