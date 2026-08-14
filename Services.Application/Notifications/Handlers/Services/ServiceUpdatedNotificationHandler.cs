@@ -6,7 +6,7 @@ using Services.Messaging.Contracts.Events.Services;
 
 namespace Services.Application.Notifications.Handlers.Services;
 
-public class ServiceUpdatedNotificationHandler : INotificationHandler<ServiceUpdatedNotification>
+public class ServiceUpdatedNotificationHandler : INotificationHandler<ServiceUpdatedNotification> 
 {
     private readonly IEventPublisher _eventPublisher;
 
@@ -24,6 +24,7 @@ public class ServiceUpdatedNotificationHandler : INotificationHandler<ServiceUpd
             Id = service.Id,
             Name = service.Name,
             Price = service.Price,
+            SpecializationId = service.SpecializationId,
             Status = (ServiceStatus)service.Status,
             UpdatedAt = service.UpdatedAt!.Value
         }, cancellationToken);

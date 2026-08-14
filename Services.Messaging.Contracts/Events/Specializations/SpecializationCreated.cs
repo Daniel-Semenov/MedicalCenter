@@ -1,7 +1,6 @@
 ﻿using Services.Messaging.Contracts.Enums;
-using Services.Messaging.Contracts.Events.Specializations;
 
-namespace Services.Messaging.Contracts.Events;
+namespace Services.Messaging.Contracts.Events.Specializations;
 
 public record SpecializationCreated
 {

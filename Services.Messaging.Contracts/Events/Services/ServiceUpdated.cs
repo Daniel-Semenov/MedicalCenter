@@ -7,6 +7,7 @@ public record ServiceUpdated
     public Guid Id { get; init; }
     public string Name { get; init; } = null!;
     public decimal Price { get; init; }
+    public Guid SpecializationId { get; init; }
     public ServiceStatus Status { get; init; }
     public DateTime UpdatedAt { get; init; }
 }

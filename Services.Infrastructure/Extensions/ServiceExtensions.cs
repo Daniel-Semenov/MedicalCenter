@@ -6,7 +6,10 @@ using Microsoft.Extensions.Options;
 using Services.Application.Interfaces;
 using Services.Infrastructure.Data;
 using Services.Infrastructure.Messaging;
+using Services.Infrastructure.Messaging.Constants;
 using Services.Infrastructure.Repositories;
+using Services.Messaging.Contracts.Events.Services;
+using Services.Messaging.Contracts.Events.Specializations;
 
 namespace Services.Infrastructure.Extensions;
 
@@ -31,7 +34,7 @@ public static class DependencyInjection
         {
             configuration.GetSection(RabbitMqOptions.SectionName).Bind(options);
         });
-        
+
         services.AddScoped<IEventPublisher, MassTransitEventPublisher>();
 
         services.AddMassTransit(busConfigurator =>
@@ -51,6 +54,13 @@ public static class DependencyInjection
                     hostConfigurator.Username(rabbitMqOptions.Username);
                     hostConfigurator.Password(rabbitMqOptions.Password);
                 });
+
+                rabbitConfigurator.Message<ServiceCreated>(m => m.SetEntityName(MessagingEntityNames.ServiceCreated));
+                rabbitConfigurator.Message<ServiceUpdated>(m => m.SetEntityName(MessagingEntityNames.ServiceUpdated));
+                rabbitConfigurator.Message<ServiceDeleted>(m => m.SetEntityName(MessagingEntityNames.ServiceDeleted));
+                rabbitConfigurator.Message<SpecializationCreated>(m => m.SetEntityName(MessagingEntityNames.SpecializationCreated));
+                rabbitConfigurator.Message<SpecializationUpdated>(m => m.SetEntityName(MessagingEntityNames.SpecializationUpdated));
+                rabbitConfigurator.Message<SpecializationDeleted>(m => m.SetEntityName(MessagingEntityNames.SpecializationDeleted));
 
                 rabbitConfigurator.ConfigureEndpoints(context);
             });
