@@ -1,4 +1,5 @@
-﻿namespace Appointments.Infrastructure.Messaging.Contracts.Specializations;
+﻿namespace Services.Messaging.Contracts.Events.Specializations;
+
 
 public record SpecializationDeleted
 {

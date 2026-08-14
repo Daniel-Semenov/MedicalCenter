@@ -1,8 +1,8 @@
 ﻿using Appointments.Application.Interfaces;
 using Appointments.Domain.Entities.Snapshots;
 using MassTransit;
-using Appointments.Infrastructure.Messaging.Contracts.Enums;
-using Appointments.Infrastructure.Messaging.Contracts.Specializations;
+using Services.Messaging.Contracts.Events.Enums;
+using Services.Messaging.Contracts.Events.Specializations;
 
 namespace Appointments.Infrastructure.Consumers;
 

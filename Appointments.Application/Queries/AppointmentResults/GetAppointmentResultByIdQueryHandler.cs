@@ -7,7 +7,8 @@ using Appointments.Shared.Common.Results;
 
 namespace Appointments.Application.Queries.AppointmentResults;
 
-public class GetAppointmentResultByIdQueryHandler : IRequestHandler<GetAppointmentResultByIdQuery, Result<AppointmentResultDto>>
+public class
+    GetAppointmentResultByIdQueryHandler : IRequestHandler<GetAppointmentResultByIdQuery, Result<AppointmentResultDto>>
 {
     private readonly IAppointmentResultRepository _appointmentResultRepository;
     private readonly IAppointmentRepository _appointmentRepository;
@@ -32,7 +33,8 @@ public class GetAppointmentResultByIdQueryHandler : IRequestHandler<GetAppointme
         _specializationSnapshotRepository = specializationSnapshotRepository;
     }
 
-    public async Task<Result<AppointmentResultDto>> Handle(GetAppointmentResultByIdQuery request, CancellationToken cancellationToken)
+    public async Task<Result<AppointmentResultDto>> Handle(GetAppointmentResultByIdQuery request,
+        CancellationToken cancellationToken)
     {
         var resultEntityResult = await _appointmentResultRepository.GetByIdAsync(request.Id, cancellationToken);
 
@@ -43,7 +45,8 @@ public class GetAppointmentResultByIdQueryHandler : IRequestHandler<GetAppointme
 
         var resultEntity = resultEntityResult.Value;
 
-        var appointmentResult = await _appointmentRepository.GetByIdAsync(resultEntity.AppointmentId, cancellationToken);
+        var appointmentResult =
+            await _appointmentRepository.GetByIdAsync(resultEntity.AppointmentId, cancellationToken);
 
         if (!appointmentResult.IsSuccess)
         {
@@ -52,15 +55,18 @@ public class GetAppointmentResultByIdQueryHandler : IRequestHandler<GetAppointme
 
         var appointment = appointmentResult.Value;
 
-        var doctorSnapshotResult = await _doctorSnapshotRepository.GetByIdAsync(appointment.DoctorId, cancellationToken);
-        var patientSnapshotResult = await _patientSnapshotRepository.GetByIdAsync(appointment.PatientId, cancellationToken);
-        var serviceSnapshotResult = await _serviceSnapshotRepository.GetByIdAsync(appointment.ServiceId, cancellationToken);
+        var doctorSnapshotResult =
+            await _doctorSnapshotRepository.GetByIdAsync(appointment.DoctorId, cancellationToken);
+        var patientSnapshotResult =
+            await _patientSnapshotRepository.GetByIdAsync(appointment.PatientId, cancellationToken);
+        var serviceSnapshotResult =
+            await _serviceSnapshotRepository.GetByIdAsync(appointment.ServiceId, cancellationToken);
 
         string specializationName = string.Empty;
-        if (appointment.SpecializationId.HasValue)
+        if (serviceSnapshotResult.IsSuccess)
         {
             var specializationSnapshotResult = await _specializationSnapshotRepository.GetByIdAsync(
-                appointment.SpecializationId.Value, cancellationToken);
+                serviceSnapshotResult.Value.SpecializationId, cancellationToken);
 
             if (specializationSnapshotResult.IsSuccess)
             {
@@ -74,11 +80,13 @@ public class GetAppointmentResultByIdQueryHandler : IRequestHandler<GetAppointme
             AppointmentId = resultEntity.AppointmentId,
             ResultDate = appointment.AppointmentDate,
             PatientFullName = patientSnapshotResult.IsSuccess
-                ? SnapshotFormatting.FormatFullName(patientSnapshotResult.Value.LastName, patientSnapshotResult.Value.FirstName, patientSnapshotResult.Value.MiddleName)
+                ? SnapshotFormatting.FormatFullName(patientSnapshotResult.Value.LastName,
+                    patientSnapshotResult.Value.FirstName, patientSnapshotResult.Value.MiddleName)
                 : string.Empty,
             PatientDateOfBirth = patientSnapshotResult.IsSuccess ? patientSnapshotResult.Value.DateOfBirth : null,
             DoctorFullName = doctorSnapshotResult.IsSuccess
-                ? SnapshotFormatting.FormatFullName(doctorSnapshotResult.Value.LastName, doctorSnapshotResult.Value.FirstName, doctorSnapshotResult.Value.MiddleName)
+                ? SnapshotFormatting.FormatFullName(doctorSnapshotResult.Value.LastName,
+                    doctorSnapshotResult.Value.FirstName, doctorSnapshotResult.Value.MiddleName)
                 : string.Empty,
             DoctorSpecialization = specializationName,
             ServiceName = serviceSnapshotResult.IsSuccess ? serviceSnapshotResult.Value.Name : string.Empty,

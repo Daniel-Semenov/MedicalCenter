@@ -8,9 +8,10 @@ using Microsoft.Extensions.Options;
 using Appointments.Infrastructure.Consumers;
 using Appointments.Infrastructure.Db;
 using Appointments.Infrastructure.Messaging;
-using Appointments.Infrastructure.Messaging.Contracts.Services;
-using Appointments.Infrastructure.Messaging.Contracts.Specializations; // ← ДОБАВЬ!
+using Appointments.Infrastructure.Messaging.Constants;
 using Appointments.Infrastructure.Repositories;
+using Services.Messaging.Contracts.Events.Services;
+using Services.Messaging.Contracts.Events.Specializations;
 
 namespace Appointments.Infrastructure.Extensions;
 
@@ -71,39 +72,28 @@ public static class ServiceExtensions
                     hostConfigurator.Password(rabbitMqOptions.Password);
                 });
 
-                rabbitConfigurator.UseRawJsonSerializer();
-                rabbitConfigurator.Message<ServiceUpdated>(m =>
-                    m.SetEntityName("Services.Messaging.Contracts.Events.Services:ServiceUpdated"));
+                rabbitConfigurator.Message<ServiceCreated>(m => m.SetEntityName(MessagingEntityNames.ServiceCreated));
+                rabbitConfigurator.Message<ServiceUpdated>(m => m.SetEntityName(MessagingEntityNames.ServiceUpdated));
+                rabbitConfigurator.Message<ServiceDeleted>(m => m.SetEntityName(MessagingEntityNames.ServiceDeleted));
 
-                rabbitConfigurator.Message<ServiceCreated>(m =>
-                    m.SetEntityName("Services.Messaging.Contracts.Events.Services:ServiceCreated"));
+                rabbitConfigurator.Message<SpecializationCreated>(m => m.SetEntityName(MessagingEntityNames.SpecializationCreated));
+                rabbitConfigurator.Message<SpecializationUpdated>(m => m.SetEntityName(MessagingEntityNames.SpecializationUpdated));
+                rabbitConfigurator.Message<SpecializationDeleted>(m => m.SetEntityName(MessagingEntityNames.SpecializationDeleted));
 
-                rabbitConfigurator.Message<ServiceDeleted>(m =>
-                    m.SetEntityName("Services.Messaging.Contracts.Events.Services:ServiceDeleted"));
-
-                rabbitConfigurator.Message<SpecializationUpdated>(m =>
-                    m.SetEntityName("Services.Messaging.Contracts.Events.Specializations:SpecializationUpdated"));
-
-                rabbitConfigurator.Message<SpecializationCreated>(m =>
-                    m.SetEntityName("Services.Messaging.Contracts.Events.Specializations:SpecializationCreated"));
-
-                rabbitConfigurator.Message<SpecializationDeleted>(m =>
-                    m.SetEntityName("Services.Messaging.Contracts.Events.Specializations:SpecializationDeleted"));
-
-                rabbitConfigurator.ReceiveEndpoint("appointments-service-events", endpoint =>
+                rabbitConfigurator.ReceiveEndpoint(MessagingQueueNames.ServiceEvents, endpoint =>
                 {
-                    endpoint.Bind("Services.Messaging.Contracts.Events.Services:ServiceCreated");
-                    endpoint.Bind("Services.Messaging.Contracts.Events.Services:ServiceUpdated");
-                    endpoint.Bind("Services.Messaging.Contracts.Events.Services:ServiceDeleted");
+                    endpoint.Bind(MessagingEntityNames.ServiceCreated);
+                    endpoint.Bind(MessagingEntityNames.ServiceUpdated);
+                    endpoint.Bind(MessagingEntityNames.ServiceDeleted);
 
                     endpoint.ConfigureConsumer<ServiceSyncConsumer>(context);
                 });
 
-                rabbitConfigurator.ReceiveEndpoint("appointments-specialization-events", endpoint =>
+                rabbitConfigurator.ReceiveEndpoint(MessagingQueueNames.SpecializationEvents, endpoint =>
                 {
-                    endpoint.Bind("Services.Messaging.Contracts.Events.Specializations:SpecializationCreated");
-                    endpoint.Bind("Services.Messaging.Contracts.Events.Specializations:SpecializationUpdated");
-                    endpoint.Bind("Services.Messaging.Contracts.Events.Specializations:SpecializationDeleted");
+                    endpoint.Bind(MessagingEntityNames.SpecializationCreated);
+                    endpoint.Bind(MessagingEntityNames.SpecializationUpdated);
+                    endpoint.Bind(MessagingEntityNames.SpecializationDeleted);
 
                     endpoint.ConfigureConsumer<SpecializationSyncConsumer>(context);
                 });

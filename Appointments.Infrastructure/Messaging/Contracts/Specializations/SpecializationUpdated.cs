@@ -1,6 +1,7 @@
-﻿using Appointments.Infrastructure.Messaging.Contracts.Enums;
+﻿using Services.Messaging.Contracts.Events.Enums;
 
-namespace Appointments.Infrastructure.Messaging.Contracts.Specializations;
+namespace Services.Messaging.Contracts.Events.Specializations;
+
 
 
 public record SpecializationUpdated

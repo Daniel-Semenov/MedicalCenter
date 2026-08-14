@@ -1,15 +1,15 @@
 ﻿using Appointments.Application.Interfaces;
 using MassTransit;
 using Appointments.Domain.Entities.Snapshots;
-using Appointments.Infrastructure.Messaging.Contracts.Enums;
-using Appointments.Infrastructure.Messaging.Contracts.Services;
+using Services.Messaging.Contracts.Events.Enums;
+using Services.Messaging.Contracts.Events.Services;
 
 namespace Appointments.Infrastructure.Consumers;
 
 public class ServiceSyncConsumer :
     IConsumer<ServiceCreated>,
     IConsumer<ServiceUpdated>,
-    IConsumer<ServiceDeleted>
+    IConsumer<ServiceDeleted> 
 {
     private readonly ISnapshotRepository<ServiceSnapshot> _serviceSnapshotRepository;
 

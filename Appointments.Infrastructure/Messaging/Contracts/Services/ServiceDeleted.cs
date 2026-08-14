@@ -1,4 +1,4 @@
-﻿namespace Appointments.Infrastructure.Messaging.Contracts.Services;
+﻿namespace Services.Messaging.Contracts.Events.Services;
 
 public record ServiceDeleted
 {

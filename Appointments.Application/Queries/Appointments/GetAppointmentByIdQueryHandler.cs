@@ -32,7 +32,8 @@ public class GetAppointmentByIdQueryHandler : IRequestHandler<GetAppointmentById
         _officeSnapshotRepository = officeSnapshotRepository;
     }
 
-    public async Task<Result<AppointmentDetailsDto>> Handle(GetAppointmentByIdQuery request, CancellationToken cancellationToken)
+    public async Task<Result<AppointmentDetailsDto>> Handle(GetAppointmentByIdQuery request,
+        CancellationToken cancellationToken)
     {
         var appointmentResult = await _appointmentRepository.GetByIdAsync(request.Id, cancellationToken);
 
@@ -43,16 +44,20 @@ public class GetAppointmentByIdQueryHandler : IRequestHandler<GetAppointmentById
 
         var appointment = appointmentResult.Value;
 
-        var doctorSnapshotResult = await _doctorSnapshotRepository.GetByIdAsync(appointment.DoctorId, cancellationToken);
-        var patientSnapshotResult = await _patientSnapshotRepository.GetByIdAsync(appointment.PatientId, cancellationToken);
-        var serviceSnapshotResult = await _serviceSnapshotRepository.GetByIdAsync(appointment.ServiceId, cancellationToken);
-        var officeSnapshotResult = await _officeSnapshotRepository.GetByIdAsync(appointment.OfficeId, cancellationToken);
+        var doctorSnapshotResult =
+            await _doctorSnapshotRepository.GetByIdAsync(appointment.DoctorId, cancellationToken);
+        var patientSnapshotResult =
+            await _patientSnapshotRepository.GetByIdAsync(appointment.PatientId, cancellationToken);
+        var serviceSnapshotResult =
+            await _serviceSnapshotRepository.GetByIdAsync(appointment.ServiceId, cancellationToken);
+        var officeSnapshotResult =
+            await _officeSnapshotRepository.GetByIdAsync(appointment.OfficeId, cancellationToken);
 
         SpecializationSnapshot? specializationSnapshot = null;
-        if (appointment.SpecializationId.HasValue)
+        if (serviceSnapshotResult.IsSuccess)
         {
             var specializationSnapshotResult = await _specializationSnapshotRepository.GetByIdAsync(
-                appointment.SpecializationId.Value, cancellationToken);
+                serviceSnapshotResult.Value.SpecializationId, cancellationToken);
 
             if (specializationSnapshotResult.IsSuccess)
             {
@@ -66,7 +71,9 @@ public class GetAppointmentByIdQueryHandler : IRequestHandler<GetAppointmentById
             PatientId = appointment.PatientId,
             DoctorId = appointment.DoctorId,
             ServiceId = appointment.ServiceId,
-            SpecializationId = appointment.SpecializationId ?? Guid.Empty,
+            SpecializationId = serviceSnapshotResult.IsSuccess
+                ? serviceSnapshotResult.Value.SpecializationId
+                : Guid.NewGuid(),
             OfficeId = appointment.OfficeId,
             AppointmentDate = appointment.AppointmentDate,
             StartTime = appointment.StartTime,

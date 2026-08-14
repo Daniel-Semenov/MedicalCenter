@@ -1,6 +1,6 @@
-﻿using Appointments.Infrastructure.Messaging.Contracts.Enums;
+﻿using Services.Messaging.Contracts.Events.Enums;
 
-namespace Appointments.Infrastructure.Messaging.Contracts.Services;
+namespace Services.Messaging.Contracts.Events.Services;
 
 public record ServiceCreated
 {

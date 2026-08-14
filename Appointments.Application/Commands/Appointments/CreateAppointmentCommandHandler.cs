@@ -44,7 +44,7 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
         var serviceSnapshotResult = await _serviceSnapshotRepository.GetByIdAsync(request.ServiceId, cancellationToken);
         var specializationId = serviceSnapshotResult.IsSuccess
             ? serviceSnapshotResult.Value.SpecializationId
-            : (Guid?)null;
+            : Guid.NewGuid();
 
         var appointment = new Domain.Entities.Appointment
         {

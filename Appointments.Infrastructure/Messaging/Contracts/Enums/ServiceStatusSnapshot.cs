@@ -1,4 +1,6 @@
-﻿namespace Appointments.Infrastructure.Messaging.Contracts.Enums;
+﻿
+namespace Services.Messaging.Contracts.Events.Enums;
+
 
 public enum ServiceStatusSnapshot
 {
