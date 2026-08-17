@@ -1,0 +1,31 @@
+﻿using MediatR;
+using Profiles.Application.Interfaces;
+using Profiles.Application.Notifications.Doctors;
+using Profiles.Infrastructure.Messaging.Contracts.Events.Doctors;
+
+namespace Profiles.Infrastructure.Notifications.Handlers.Doctors;
+
+public class DoctorCreatedNotificationHandler : INotificationHandler<DoctorCreatedNotification>
+{
+    private readonly IEventPublisher _eventPublisher;
+
+    public DoctorCreatedNotificationHandler(IEventPublisher eventPublisher)
+    {
+        _eventPublisher = eventPublisher;
+    }
+
+    public async Task Handle(DoctorCreatedNotification notification, CancellationToken cancellationToken)
+    {
+        var @event = new DoctorCreated
+        {
+            Id = notification.Id,
+            AccountId = notification.AccountId,
+            SpecializationId = notification.SpecializationId,
+            OfficeId = notification.OfficeId,
+            CareerStartYear = notification.CareerStartYear,
+            CreatedAt = notification.CreatedAt
+        };
+
+        await _eventPublisher.PublishAsync(@event, cancellationToken);
+    }
+}

@@ -1,7 +1,10 @@
-﻿using Profiles.Application.DTO_s.Request;
+﻿using MediatR;
+using Profiles.Application.DTO_s.Request;
 using Profiles.Application.DTO_s.Response;
+using Profiles.Application.Interfaces;
 using Profiles.Application.Interfaces.Repositories;
 using Profiles.Application.Interfaces.Services;
+using Profiles.Application.Notifications.Doctors;
 using Profiles.Domain.Entities;
 using Profiles.Shared.Common;
 using Profiles.Shared.Common.Pagination;
@@ -11,10 +14,14 @@ namespace Profiles.Application.Services;
 public class DoctorService : IDoctorService
 {
     private readonly IDoctorRepository _doctorRepository;
+    private readonly IMediator _mediator;
 
-    public DoctorService(IDoctorRepository doctorRepository)
+    public DoctorService(
+        IDoctorRepository doctorRepository,
+        IMediator mediator)
     {
         _doctorRepository = doctorRepository;
+        _mediator = mediator;
     }
 
     public async Task<Result<DoctorResponseDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -119,6 +126,15 @@ public class DoctorService : IDoctorService
             return Result<DoctorResponseDto>.Failure(result.Error);
         }
 
+        await _mediator.Publish(new DoctorCreatedNotification(
+            result.Value.Id,
+            result.Value.AccountId,
+            result.Value.SpecializationId,
+            result.Value.OfficeId,
+            result.Value.CareerStartYear,
+            DateTime.UtcNow
+        ), cancellationToken);
+
         return Result<DoctorResponseDto>.Success(MapToDto(result.Value));
     }
 
@@ -157,12 +173,33 @@ public class DoctorService : IDoctorService
             return Result<DoctorResponseDto>.Failure(updateResult.Error);
         }
 
+        await _mediator.Publish(new DoctorUpdatedNotification(
+            doctor.Id,
+            doctor.AccountId,
+            doctor.SpecializationId,
+            doctor.OfficeId,
+            doctor.CareerStartYear,
+            DateTime.UtcNow
+        ), cancellationToken);
+
         return Result<DoctorResponseDto>.Success(MapToDto(doctor));
     }
 
     public async Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _doctorRepository.DeleteAsync(id, cancellationToken);
+        var deleteResult = await _doctorRepository.DeleteAsync(id, cancellationToken);
+
+        if (!deleteResult.IsSuccess)
+        {
+            return deleteResult;
+        }
+
+        await _mediator.Publish(new DoctorDeletedNotification(
+            id,
+            DateTime.UtcNow
+        ), cancellationToken);
+
+        return deleteResult;
     }
 
     private static DoctorResponseDto MapToDto(Doctor doctor) => new()

@@ -1,7 +1,9 @@
-﻿using Profiles.Application.DTO_s.Request;
+﻿using MediatR;
+using Profiles.Application.DTO_s.Request;
 using Profiles.Application.DTO_s.Response;
 using Profiles.Application.Interfaces.Repositories;
 using Profiles.Application.Interfaces.Services;
+using Profiles.Application.Notifications.Receptionists;
 using Profiles.Domain.Entities;
 using Profiles.Shared.Common;
 using Profiles.Shared.Common.Pagination;
@@ -11,10 +13,14 @@ namespace Profiles.Application.Services;
 public class ReceptionistService : IReceptionistService
 {
     private readonly IReceptionistRepository _receptionistRepository;
+    private readonly IMediator _mediator;
 
-    public ReceptionistService(IReceptionistRepository receptionistRepository)
+    public ReceptionistService(
+        IReceptionistRepository receptionistRepository,
+        IMediator mediator)
     {
         _receptionistRepository = receptionistRepository;
+        _mediator = mediator;
     }
 
     public async Task<Result<ReceptionistResponseDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -86,6 +92,13 @@ public class ReceptionistService : IReceptionistService
             return Result<ReceptionistResponseDto>.Failure(result.Error);
         }
 
+        await _mediator.Publish(new ReceptionistCreatedNotification(
+            result.Value.Id,
+            result.Value.AccountId,
+            result.Value.OfficeId,
+            DateTime.UtcNow
+        ), cancellationToken);
+
         return Result<ReceptionistResponseDto>.Success(MapToDto(result.Value));
     }
 
@@ -115,12 +128,31 @@ public class ReceptionistService : IReceptionistService
             return Result<ReceptionistResponseDto>.Failure(updateResult.Error);
         }
 
+        await _mediator.Publish(new ReceptionistUpdatedNotification(
+            receptionist.Id,
+            receptionist.AccountId,
+            receptionist.OfficeId,
+            DateTime.UtcNow
+        ), cancellationToken);
+
         return Result<ReceptionistResponseDto>.Success(MapToDto(receptionist));
     }
 
     public async Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _receptionistRepository.DeleteAsync(id, cancellationToken);
+        var deleteResult = await _receptionistRepository.DeleteAsync(id, cancellationToken);
+
+        if (!deleteResult.IsSuccess)
+        {
+            return deleteResult;
+        }
+
+        await _mediator.Publish(new ReceptionistDeletedNotification(
+            id,
+            DateTime.UtcNow
+        ), cancellationToken);
+
+        return deleteResult;
     }
 
     private static ReceptionistResponseDto MapToDto(Receptionist receptionist) => new()
