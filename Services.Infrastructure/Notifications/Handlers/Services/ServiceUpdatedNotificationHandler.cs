@@ -4,7 +4,7 @@ using Services.Application.Notifications.Services;
 using Services.Messaging.Contracts.Enums;
 using Services.Messaging.Contracts.Events.Services;
 
-namespace Services.Application.Notifications.Handlers.Services;
+namespace Services.Infrastructure.Notifications.Handlers.Services;
 
 public class ServiceUpdatedNotificationHandler : INotificationHandler<ServiceUpdatedNotification> 
 {

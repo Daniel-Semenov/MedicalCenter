@@ -19,4 +19,8 @@
       <ProjectReference Include="..\Services.Application\Services.Application.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Notifications\" />
+    </ItemGroup>
+
 </Project>

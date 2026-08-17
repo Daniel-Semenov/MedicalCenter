@@ -3,7 +3,7 @@ using Services.Application.Interfaces;
 using Services.Application.Notifications.Specializations;
 using Services.Messaging.Contracts.Events.Specializations;
 
-namespace Services.Application.Notifications.Handlers.Specializations;
+namespace Services.Infrastructure.Notifications.Handlers.Specializations;
 
 public class SpecializationDeletedNotificationHandler : INotificationHandler<SpecializationDeletedNotification>
 {
