@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using Profiles.Domain.Entities;
 
 namespace Profiles.Infrastructure.Db;
@@ -22,7 +23,10 @@ public class ApplicationDbContext : DbContext
     {
         base.OnModelCreating(builder);
 
-        builder.ApplyConfigurationsFromAssembly(
-            typeof(ApplicationDbContext).Assembly);
+        builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+
+        builder.AddInboxStateEntity();
+        builder.AddOutboxMessageEntity();
+        builder.AddOutboxStateEntity();
     }
 }
