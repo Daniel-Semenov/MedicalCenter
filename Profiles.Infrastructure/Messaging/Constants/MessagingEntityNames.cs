@@ -13,4 +13,8 @@ public static class MessagingEntityNames
     public const string ReceptionistCreated = "Profiles.Infrastructure.Messaging.Contracts.Events.Receptionists:ReceptionistCreated";
     public const string ReceptionistUpdated = "Profiles.Infrastructure.Messaging.Contracts.Events.Receptionists:ReceptionistUpdated";
     public const string ReceptionistDeleted = "Profiles.Infrastructure.Messaging.Contracts.Events.Receptionists:ReceptionistDeleted";
+    
+    public const string AccountCreated = "Authorization.Infrastructure.Messaging.Contracts.Events.Accounts:AccountCreated";
+    public const string AccountUpdated = "Authorization.Infrastructure.Messaging.Contracts.Events.Accounts:AccountUpdated";
+    public const string AccountDeactivated = "Authorization.Infrastructure.Messaging.Contracts.Events.Accounts:AccountDeactivated";
 }

@@ -105,9 +105,10 @@ public class PatientService : IPatientService
 
         await _mediator.Publish(new PatientCreatedNotification(
             result.Value.Id,
-            result.Value.AccountId,
-            result.Value.IsLinkedToAccount,
-            DateTime.UtcNow
+            result.Value.FirstName,
+            result.Value.LastName,
+            result.Value.MiddleName,
+            result.Value.DateOfBirth
         ), cancellationToken);
 
         return Result<PatientResponseDto>.Success(MapToDto(result.Value));
@@ -140,9 +141,10 @@ public class PatientService : IPatientService
 
         await _mediator.Publish(new PatientUpdatedNotification(
             patient.Id,
-            patient.AccountId,
-            patient.IsLinkedToAccount,
-            DateTime.UtcNow
+            patient.FirstName,
+            patient.LastName,
+            patient.MiddleName,
+            patient.DateOfBirth
         ), cancellationToken);
 
         return Result<PatientResponseDto>.Success(MapToDto(patient));

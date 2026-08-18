@@ -1,13 +1,14 @@
-﻿using MassTransit;
+﻿using Authorization.Infrastructure.Messaging.Contracts.Events.Accounts;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Profiles.Application.Interfaces;
 using Profiles.Application.Interfaces.Repositories;
-using Profiles.Application.Notifications.Doctors;
 using Profiles.Infrastructure.Db;
 using Profiles.Infrastructure.Messaging.Constants;
+using Profiles.Infrastructure.Messaging.Consumers;
 using Profiles.Infrastructure.Messaging.Contracts.Events.Doctors;
 using Profiles.Infrastructure.Messaging.Contracts.Events.Patients;
 using Profiles.Infrastructure.Messaging.Contracts.Events.Receptionist;
@@ -20,13 +21,14 @@ namespace Profiles.Infrastructure.Extensions;
 
 public static class ServiceExtensions
 {
-    public static IServiceCollection AddInfrastructureLayer(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructureLayer(this IServiceCollection services,
+        IConfiguration configuration)
     {
         services.AddDatabase(configuration)
             .AddRepositories()
             .AddMediatR()
             .AddMessaging(configuration);
-        
+
         return services;
     }
 
@@ -36,7 +38,7 @@ public static class ServiceExtensions
         {
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"));
         });
-        
+
         return services;
     }
 
@@ -45,63 +47,100 @@ public static class ServiceExtensions
         services.AddScoped<IDoctorRepository, DoctorRepository>();
         services.AddScoped<IPatientRepository, PatientRepository>();
         services.AddScoped<IReceptionistRepository, ReceptionistRepository>();
-        
+
         return services;
     }
-    
-    private static IServiceCollection AddMessaging(this IServiceCollection services, IConfiguration configuration)
+
+private static IServiceCollection AddMessaging(this IServiceCollection services, IConfiguration configuration)
+{
+    services.Configure<RabbitMqOptions>(options =>
     {
-        services.Configure<RabbitMqOptions>(options =>
+        configuration.GetSection(RabbitMqOptions.SectionName).Bind(options);
+    });
+
+    services.AddScoped<IEventPublisher, MassTransitEventPublisher>();
+
+    services.AddMassTransit(busConfigurator =>
+    {
+        busConfigurator.AddConsumer<AccountSyncConsumer>();
+
+        busConfigurator.AddEntityFrameworkOutbox<ApplicationDbContext>(o =>
         {
-            configuration.GetSection(RabbitMqOptions.SectionName).Bind(options);
+            o.UsePostgres();
+            o.UseBusOutbox();
         });
 
-        services.AddScoped<IEventPublisher, MassTransitEventPublisher>();
-
-        services.AddMassTransit(busConfigurator =>
+        busConfigurator.UsingRabbitMq((context, rabbitConfigurator) =>
         {
-            busConfigurator.AddEntityFrameworkOutbox<ApplicationDbContext>(o =>
+            var rabbitMqOptions = context.GetRequiredService<IOptions<RabbitMqOptions>>().Value;
+
+            rabbitConfigurator.Host(rabbitMqOptions.Host, rabbitMqOptions.VirtualHost, hostConfigurator =>
             {
-                o.UsePostgres();
-                o.UseBusOutbox();
+                hostConfigurator.Username(rabbitMqOptions.Username);
+                hostConfigurator.Password(rabbitMqOptions.Password);
             });
 
-            busConfigurator.UsingRabbitMq((context, rabbitConfigurator) =>
+            rabbitConfigurator.Message<AccountCreated>(m =>
+                m.SetEntityName(MessagingEntityNames.AccountCreated));
+
+            rabbitConfigurator.Message<AccountUpdated>(m =>
+                m.SetEntityName(MessagingEntityNames.AccountUpdated));
+
+            rabbitConfigurator.Message<AccountDeactivated>(m =>
+                m.SetEntityName(MessagingEntityNames.AccountDeactivated));
+
+            rabbitConfigurator.Message<DoctorCreated>(m =>
+                m.SetEntityName(MessagingEntityNames.DoctorCreated));
+
+            rabbitConfigurator.Message<DoctorUpdated>(m =>
+                m.SetEntityName(MessagingEntityNames.DoctorUpdated));
+
+            rabbitConfigurator.Message<DoctorDeleted>(m =>
+                m.SetEntityName(MessagingEntityNames.DoctorDeleted));
+
+            rabbitConfigurator.Message<PatientCreated>(m =>
+                m.SetEntityName(MessagingEntityNames.PatientCreated));
+
+            rabbitConfigurator.Message<PatientUpdated>(m =>
+                m.SetEntityName(MessagingEntityNames.PatientUpdated));
+
+            rabbitConfigurator.Message<PatientDeleted>(m =>
+                m.SetEntityName(MessagingEntityNames.PatientDeleted));
+
+            rabbitConfigurator.Message<ReceptionistCreated>(m =>
+                m.SetEntityName(MessagingEntityNames.ReceptionistCreated));
+
+            rabbitConfigurator.Message<ReceptionistUpdated>(m =>
+                m.SetEntityName(MessagingEntityNames.ReceptionistUpdated));
+
+            rabbitConfigurator.Message<ReceptionistDeleted>(m =>
+                m.SetEntityName(MessagingEntityNames.ReceptionistDeleted));
+
+            rabbitConfigurator.ReceiveEndpoint(MessagingQueueNames.AccountEvents, endpoint =>
             {
-                var rabbitMqOptions = context.GetRequiredService<IOptions<RabbitMqOptions>>().Value;
+                endpoint.Bind(MessagingEntityNames.AccountCreated);
+                endpoint.Bind(MessagingEntityNames.AccountUpdated);
+                endpoint.Bind(MessagingEntityNames.AccountDeactivated);
 
-                rabbitConfigurator.Host(rabbitMqOptions.Host, rabbitMqOptions.VirtualHost, hostConfigurator =>
-                {
-                    hostConfigurator.Username(rabbitMqOptions.Username);
-                    hostConfigurator.Password(rabbitMqOptions.Password);
-                });
-
-                rabbitConfigurator.Message<DoctorCreated>(m => m.SetEntityName(MessagingEntityNames.DoctorCreated));
-                rabbitConfigurator.Message<DoctorUpdated>(m => m.SetEntityName(MessagingEntityNames.DoctorUpdated));
-                rabbitConfigurator.Message<DoctorDeleted>(m => m.SetEntityName(MessagingEntityNames.DoctorDeleted));
-
-                rabbitConfigurator.Message<PatientCreated>(m => m.SetEntityName(MessagingEntityNames.PatientCreated));
-                rabbitConfigurator.Message<PatientUpdated>(m => m.SetEntityName(MessagingEntityNames.PatientUpdated));
-                rabbitConfigurator.Message<PatientDeleted>(m => m.SetEntityName(MessagingEntityNames.PatientDeleted));
-
-                rabbitConfigurator.Message<ReceptionistCreated>(m => m.SetEntityName(MessagingEntityNames.ReceptionistCreated));
-                rabbitConfigurator.Message<ReceptionistUpdated>(m => m.SetEntityName(MessagingEntityNames.ReceptionistUpdated));
-                rabbitConfigurator.Message<ReceptionistDeleted>(m => m.SetEntityName(MessagingEntityNames.ReceptionistDeleted));
+                endpoint.ConfigureConsumer<AccountSyncConsumer>(context);
             });
+
+            rabbitConfigurator.ConfigureEndpoints(context);
         });
+    });
 
-        return services;
-    }
+    return services;
+}
 
     private static IServiceCollection AddMediatR(this IServiceCollection services)
     {
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(typeof(Application.Services.DoctorService).Assembly);
-    
+
             cfg.RegisterServicesFromAssembly(typeof(DoctorCreatedNotificationHandler).Assembly);
         });
-        
+
         return services;
     }
 }

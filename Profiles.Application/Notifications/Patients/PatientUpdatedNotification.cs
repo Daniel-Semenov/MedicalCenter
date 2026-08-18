@@ -4,7 +4,8 @@ namespace Profiles.Application.Notifications.Patients;
 
 public record PatientUpdatedNotification(
     Guid Id,
-    Guid AccountId,
-    bool IsLinkedToAccount,
-    DateTime UpdatedAt
+    string FirstName,
+    string LastName,
+    string? MiddleName,
+    DateTime? DateOfBirth
 ) : INotification;

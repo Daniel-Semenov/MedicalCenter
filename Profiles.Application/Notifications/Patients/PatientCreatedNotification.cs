@@ -4,7 +4,8 @@ namespace Profiles.Application.Notifications.Patients;
 
 public record PatientCreatedNotification(
     Guid Id,
-    Guid AccountId,
-    bool IsLinkedToAccount,
-    DateTime CreatedAt
+    string FirstName,
+    string LastName,
+    string? MiddleName,
+    DateTime? DateOfBirth
 ) : INotification;

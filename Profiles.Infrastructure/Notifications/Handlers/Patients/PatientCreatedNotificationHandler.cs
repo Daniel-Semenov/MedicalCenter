@@ -19,9 +19,10 @@ public class PatientCreatedNotificationHandler : INotificationHandler<PatientCre
         var @event = new PatientCreated
         {
             Id = notification.Id,
-            AccountId = notification.AccountId,
-            IsLinkedToAccount = notification.IsLinkedToAccount,
-            CreatedAt = notification.CreatedAt
+            FirstName = notification.FirstName,
+            LastName = notification.LastName,
+            MiddleName = notification.MiddleName,
+            DateOfBirth = notification.DateOfBirth
         };
 
         await _eventPublisher.PublishAsync(@event, cancellationToken);
