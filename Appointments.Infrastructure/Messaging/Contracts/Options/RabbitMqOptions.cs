@@ -1,4 +1,4 @@
-﻿namespace Appointments.Infrastructure.Messaging;
+﻿namespace Appointments.Infrastructure.Messaging.Contracts.Options;
 
 public class RabbitMqOptions
 {

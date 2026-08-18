@@ -4,7 +4,7 @@ using MassTransit;
 using Services.Messaging.Contracts.Events.Enums;
 using Services.Messaging.Contracts.Events.Specializations;
 
-namespace Appointments.Infrastructure.Consumers;
+namespace Appointments.Infrastructure.Messaging.Consumers;
 
 public class SpecializationSyncConsumer :
     IConsumer<SpecializationCreated>,
