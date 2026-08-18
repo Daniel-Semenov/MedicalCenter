@@ -1,15 +1,22 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Authorization.Application.Interfaces;
+using Authorization.Application.Notifications;
 using Authorization.Domain.Entities;
 using Authorization.Infrastructure.Auth;
 using Authorization.Infrastructure.Db;
+using Authorization.Infrastructure.Messaging.Constants;
+using Authorization.Infrastructure.Messaging.Contracts.Events.Accounts;
+using Authorization.Infrastructure.Messaging.Options;
+using Authorization.Infrastructure.Notifications.Handlers;
 using Authorization.Infrastructure.Repositories;
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Authorization.Infrastructure.Extensions;
@@ -23,7 +30,9 @@ public static class ServiceExtensions
             .AddJwtTokens(configuration)
             .AddIdentityConfiguration()
             .AddRedis(configuration)
-            .AddJwtAuthentication(configuration);
+            .AddJwtAuthentication(configuration)
+            .AddMediatR()
+            .AddMessaging(configuration);
         
         return services;
     }
@@ -155,6 +164,59 @@ public static class ServiceExtensions
         services.AddSingleton<RefreshTokenGenerator>();
         services.AddScoped<TokenBlacklistService>();
 
+        return services;
+    }
+  private static IServiceCollection AddMessaging(this IServiceCollection services, IConfiguration configuration)
+{
+    services.Configure<RabbitMqOptions>(options =>
+    {
+        configuration.GetSection(RabbitMqOptions.SectionName).Bind(options);
+    });
+
+    services.AddMassTransit(busConfigurator =>
+    {
+        busConfigurator.UsingRabbitMq((context, rabbitConfigurator) =>
+        {
+            var rabbitMqOptions = context.GetRequiredService<IOptions<RabbitMqOptions>>().Value;
+
+            ConfigureRabbitMqHost(rabbitConfigurator, rabbitMqOptions);
+            ConfigureMessages(rabbitConfigurator);
+        });
+    });
+
+    return services;
+}
+
+private static void ConfigureRabbitMqHost(IRabbitMqBusFactoryConfigurator rabbitConfigurator, RabbitMqOptions options)
+{
+    rabbitConfigurator.Host(options.Host, options.VirtualHost, hostConfigurator =>
+    {
+        hostConfigurator.Username(options.Username);
+        hostConfigurator.Password(options.Password);
+    });
+}
+
+private static void ConfigureMessages(IRabbitMqBusFactoryConfigurator rabbitConfigurator)
+{
+    rabbitConfigurator.Message<AccountCreated>(m =>
+        m.SetEntityName(MessagingEntityNames.AccountCreated));
+
+    rabbitConfigurator.Message<AccountUpdated>(m =>
+        m.SetEntityName(MessagingEntityNames.AccountUpdated));
+
+    rabbitConfigurator.Message<AccountDeactivated>(m =>
+        m.SetEntityName(MessagingEntityNames.AccountDeactivated));
+}
+
+    private static IServiceCollection AddMediatR(this IServiceCollection services)
+    {
+        services.AddMediatR(cfg =>
+        {
+            cfg.RegisterServicesFromAssembly(typeof(AccountCreatedNotification).Assembly);
+    
+            cfg.RegisterServicesFromAssembly(typeof(AccountCreatedNotificationHandler).Assembly);
+        });
+        
         return services;
     }
 

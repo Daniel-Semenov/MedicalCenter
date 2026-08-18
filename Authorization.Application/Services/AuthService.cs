@@ -1,8 +1,10 @@
 ﻿using Authorization.Application.DTO_s;
 using Authorization.Application.Interfaces;
+using Authorization.Application.Notifications;
 using Authorization.Domain.Entities;
 using Authorization.Shared.Common;
 using Authorization.Shared.Common.Errors;
+using MediatR;
 using Microsoft.AspNetCore.Identity;
 
 namespace Authorization.Application.Services;
@@ -12,12 +14,14 @@ public class AuthService : IAuthService
     private readonly UserManager<Account> _userManager;
     private readonly ITokenService _tokenService;
     private readonly RoleManager<ApplicationRole> _roleManager;
+    private readonly IMediator _mediator;
 
-    public AuthService(UserManager<Account> userManager, ITokenService tokenService, RoleManager<ApplicationRole> roleManager)
+    public AuthService(UserManager<Account> userManager, ITokenService tokenService, RoleManager<ApplicationRole> roleManager, IMediator mediator)
     {
         _userManager = userManager;
         _tokenService = tokenService;
         _roleManager = roleManager;
+        _mediator = mediator;
     }
 
 
@@ -197,6 +201,16 @@ public class AuthService : IAuthService
 
             return Result.Failure(AuthErrors.RoleAssignmentFailed(error));
         }
+        
+        await _mediator.Publish(new AccountCreatedNotification(
+            account.Id,
+            role,
+            account.FirstName,
+            account.LastName,
+            account.MiddleName,
+            account.IsActive,
+            account.CreatedAt
+        ), cancellationToken);
 
         return Result.Success();
     }
