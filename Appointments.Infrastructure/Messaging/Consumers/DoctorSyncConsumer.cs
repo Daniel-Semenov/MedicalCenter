@@ -8,7 +8,8 @@ namespace Appointments.Infrastructure.Messaging.Consumers;
 
 public class DoctorSyncConsumer :
     IConsumer<DoctorCreated>,
-    IConsumer<DoctorUpdated>
+    IConsumer<DoctorUpdated>,
+    IConsumer<DoctorDeleted>
 {
     private readonly ILogger<DoctorSyncConsumer> _logger;
     private readonly ISnapshotRepository<DoctorSnapshot> _doctorSnapshotRepository;
@@ -30,9 +31,12 @@ public class DoctorSyncConsumer :
         var snapshot = new DoctorSnapshot
         {
             Id = message.Id,
+            FirstName = message.FirstName,
+            LastName = message.LastName,
+            MiddleName = message.MiddleName,    
             SpecializationId = message.SpecializationId,
             OfficeId = message.OfficeId,
-            IsAtWork = true
+            IsActive = true
         };
 
         await _doctorSnapshotRepository.UpsertAsync(snapshot, context.CancellationToken);
@@ -53,12 +57,51 @@ public class DoctorSyncConsumer :
 
         var snapshot = existingResult.Value;
 
+        snapshot.Id = message.Id;
+        snapshot.FirstName = message.FirstName;
+        snapshot.LastName = message.LastName;
+        snapshot.MiddleName = message.MiddleName;
         snapshot.SpecializationId = message.SpecializationId;
         snapshot.OfficeId = message.OfficeId;
-        snapshot.IsAtWork = true;
+        snapshot.IsActive = true;
 
         await _doctorSnapshotRepository.UpsertAsync(snapshot, context.CancellationToken);
 
         _logger.LogInformation("DoctorSnapshot updated for DoctorId: {DoctorId}", message.Id);
+    }
+    
+    public async Task Consume(ConsumeContext<DoctorDeleted> context)
+    {
+        var message = context.Message;
+
+        var existingResult = await _doctorSnapshotRepository.GetByIdAsync(
+            message.Id, 
+            context.CancellationToken);
+
+        if (!existingResult.IsSuccess)
+        {
+            _logger.LogError(
+                "Failed to get DoctorSnapshot for DoctorId: {DoctorId}. Error: {Error}", 
+                message.Id, 
+                existingResult.Error);
+            return;
+        }
+
+        if (existingResult.Value is null)
+        {
+            _logger.LogWarning(
+                "DoctorSnapshot not found for DoctorId: {DoctorId}", 
+                message.Id);
+            return;
+        }
+
+        var snapshot = existingResult.Value;
+        snapshot.IsActive = false;  
+
+        await _doctorSnapshotRepository.UpsertAsync(snapshot, context.CancellationToken);
+
+        _logger.LogInformation(
+            "DoctorSnapshot marked as not active for DoctorId: {DoctorId}", 
+            message.Id);
     }
 }

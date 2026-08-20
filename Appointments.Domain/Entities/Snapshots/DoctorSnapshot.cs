@@ -8,5 +8,5 @@ public class DoctorSnapshot : ISnapshotEntity
     public string? MiddleName { get; set; }
     public Guid? SpecializationId { get; set; }
     public Guid? OfficeId { get; set; }
-    public bool IsAtWork { get; set; } 
+    public bool IsActive { get; set; } 
 }

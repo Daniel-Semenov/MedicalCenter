@@ -3,9 +3,11 @@
 public record DoctorCreated
 {
     public Guid Id { get; init; }
-    public Guid AccountId { get; init; }
-    public Guid? SpecializationId { get; init; }
-    public Guid? OfficeId { get; init; }
-    public int CareerStartYear { get; init; }
-    public DateTime CreatedAt { get; init; }
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string? MiddleName { get; set; }
+    public Guid? SpecializationId { get; set; }
+    public Guid? OfficeId { get; set; }
+    public int CareerStartYear { get; set; }
+
 }
