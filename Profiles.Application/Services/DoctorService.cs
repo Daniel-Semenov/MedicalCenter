@@ -128,11 +128,12 @@ public class DoctorService : IDoctorService
 
         await _mediator.Publish(new DoctorCreatedNotification(
             result.Value.Id,
-            result.Value.AccountId,
+            result.Value.FirstName,
+            result.Value.LastName,
+            result.Value.MiddleName,
             result.Value.SpecializationId,
             result.Value.OfficeId,
-            result.Value.CareerStartYear,
-            DateTime.UtcNow
+            result.Value.CareerStartYear
         ), cancellationToken);
 
         return Result<DoctorResponseDto>.Success(MapToDto(result.Value));
@@ -175,11 +176,12 @@ public class DoctorService : IDoctorService
 
         await _mediator.Publish(new DoctorUpdatedNotification(
             doctor.Id,
-            doctor.AccountId,
+            doctor.FirstName,
+            doctor.LastName,
+            doctor.MiddleName,
             doctor.SpecializationId,
             doctor.OfficeId,
-            doctor.CareerStartYear,
-            DateTime.UtcNow
+            doctor.CareerStartYear
         ), cancellationToken);
 
         return Result<DoctorResponseDto>.Success(MapToDto(doctor));

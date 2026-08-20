@@ -19,11 +19,12 @@ public class DoctorUpdatedNotificationHandler : INotificationHandler<DoctorUpdat
         var @event = new DoctorUpdated
         {
             Id = notification.Id,
-            AccountId = notification.AccountId,
+            FirstName = notification.FirstName,
+            LastName = notification.LastName,
+            MiddleName = notification.MiddleName,
             SpecializationId = notification.SpecializationId,
             OfficeId = notification.OfficeId,
-            CareerStartYear = notification.CareerStartYear,
-            UpdatedAt = notification.UpdatedAt
+            CareerStartYear = notification.CareerStartYear
         };
 
         await _eventPublisher.PublishAsync(@event, cancellationToken);

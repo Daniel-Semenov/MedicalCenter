@@ -4,9 +4,10 @@ namespace Profiles.Application.Notifications.Doctors;
 
 public record DoctorUpdatedNotification(
     Guid Id,
-    Guid AccountId,
+    string FirstName,
+    string LastName,
+    string? MiddleName,
     Guid? SpecializationId,
     Guid? OfficeId,
-    int CareerStartYear,
-    DateTime UpdatedAt
+    int CareerStartYear
 ) : INotification;

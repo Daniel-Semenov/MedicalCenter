@@ -3,8 +3,8 @@
 public record PatientCreated
 {
     public Guid Id { get; init; }
-    public string FirstName { get; set; } = null!;
-    public string LastName { get; set; } = null!;
-    public string? MiddleName { get; set; }
-    public DateTime? DateOfBirth { get; set; }
+    public string FirstName { get; init; } 
+    public string LastName { get; init; } 
+    public string? MiddleName { get; init; }
+    public DateTime? DateOfBirth { get; init; }
 }       

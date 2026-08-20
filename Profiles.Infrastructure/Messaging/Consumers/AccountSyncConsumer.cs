@@ -72,7 +72,8 @@ public class AccountSyncConsumer :
                 var doctor = new Doctor
                 {
                     Id = Guid.NewGuid(),
-                    AccountId = accountId
+                    AccountId = accountId,
+                    CareerStartYear = DateTime.Now.Year
                 };
 
                 await _doctorRepository.CreateAsync(doctor, cancellationToken);
