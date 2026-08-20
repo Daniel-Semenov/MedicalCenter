@@ -8,6 +8,7 @@ using Authorization.Infrastructure.Db;
 using Authorization.Infrastructure.Messaging.Constants;
 using Authorization.Infrastructure.Messaging.Contracts.Events.Accounts;
 using Authorization.Infrastructure.Messaging.Options;
+using Authorization.Infrastructure.Messaging.Publishers;
 using Authorization.Infrastructure.Notifications.Handlers;
 using Authorization.Infrastructure.Repositories;
 using MassTransit;
@@ -173,8 +174,16 @@ public static class ServiceExtensions
         configuration.GetSection(RabbitMqOptions.SectionName).Bind(options);
     });
 
+    services.AddScoped<IEventPublisher, MassTransitEventPublisher>();
+    
     services.AddMassTransit(busConfigurator =>
     {
+        busConfigurator.AddEntityFrameworkOutbox<ApplicationDbContext>(outboxConfigurator =>
+        {
+            outboxConfigurator.UsePostgres();
+            outboxConfigurator.UseBusOutbox();
+        });
+        
         busConfigurator.UsingRabbitMq((context, rabbitConfigurator) =>
         {
             var rabbitMqOptions = context.GetRequiredService<IOptions<RabbitMqOptions>>().Value;
