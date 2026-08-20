@@ -49,7 +49,7 @@ namespace Appointments.Infrastructure.Migrations
                     b.Property<Guid>("ServiceId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("SpecializationId")
+                    b.Property<Guid>("SpecializationId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("StartTime")
@@ -127,7 +127,7 @@ namespace Appointments.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<bool>("IsAtWork")
+                    b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
                     b.Property<string>("LastName")
@@ -186,6 +186,9 @@ namespace Appointments.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("LastName")
                         .IsRequired()
