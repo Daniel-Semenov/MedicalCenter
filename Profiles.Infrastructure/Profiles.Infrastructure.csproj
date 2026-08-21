@@ -22,6 +22,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Profiles.Application\Profiles.Application.csproj" />
+      <ProjectReference Include="..\..\Messaging.Contracts\Messaging.Contracts\Messaging.Contracts.csproj" />
     </ItemGroup>
 
 </Project>

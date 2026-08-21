@@ -1,7 +1,7 @@
 ﻿using MediatR;
+using Messaging.Contracts.Events.Patients;
 using Profiles.Application.Interfaces;
 using Profiles.Application.Notifications.Patients;
-using Profiles.Infrastructure.Messaging.Contracts.Events.Patients;
 
 namespace Profiles.Infrastructure.Notifications.Handlers.Patients;
 

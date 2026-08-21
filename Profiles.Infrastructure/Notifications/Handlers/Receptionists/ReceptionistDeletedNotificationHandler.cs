@@ -1,7 +1,7 @@
 ﻿using MediatR;
+using Messaging.Contracts.Events.Receptionist;
 using Profiles.Application.Interfaces;
 using Profiles.Application.Notifications.Receptionists;
-using Profiles.Infrastructure.Messaging.Contracts.Events.Receptionist;
 
 namespace Profiles.Infrastructure.Notifications.Handlers.Receptionists;
 

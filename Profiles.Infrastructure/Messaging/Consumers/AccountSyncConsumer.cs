@@ -1,7 +1,7 @@
 ﻿using MassTransit;
 using Microsoft.Extensions.Logging;
 using Profiles.Domain.Entities;
-using Authorization.Infrastructure.Messaging.Contracts.Events.Accounts;
+using Messaging.Contracts.Events.Accounts;
 using Profiles.Application.Interfaces.Repositories;
 
 namespace Profiles.Infrastructure.Messaging.Consumers;
