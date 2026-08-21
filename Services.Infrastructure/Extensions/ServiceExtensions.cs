@@ -1,5 +1,7 @@
 ﻿using MassTransit;
 using Messaging.Contracts.Constants;
+using Messaging.Contracts.Events.Services;
+using Messaging.Contracts.Events.Specializations;
 using Messaging.Contracts.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -9,8 +11,6 @@ using Services.Application.Interfaces;
 using Services.Infrastructure.Data;
 using Services.Infrastructure.Messaging;
 using Services.Infrastructure.Repositories;
-using Services.Messaging.Contracts.Events.Services;
-using Services.Messaging.Contracts.Events.Specializations;
 
 namespace Services.Infrastructure.Extensions;
 
@@ -31,6 +31,15 @@ public static class DependencyInjection
 
     private static IServiceCollection AddMessaging(this IServiceCollection services, IConfiguration configuration)
     {
+        static void ConfigureMessage<TMessage>(
+            IRabbitMqBusFactoryConfigurator rabbitConfigurator,
+            string entityName)
+            where TMessage : class
+        {
+            rabbitConfigurator.Message<TMessage>(messageConfigurator =>
+                messageConfigurator.SetEntityName(entityName));
+        }
+
         services.Configure<RabbitMqOptions>(options =>
         {
             configuration.GetSection(RabbitMqOptions.SectionName).Bind(options);
@@ -56,12 +65,19 @@ public static class DependencyInjection
                     hostConfigurator.Password(rabbitMqOptions.Password);
                 });
 
-                rabbitConfigurator.Message<ServiceCreated>(m => m.SetEntityName(MessagingEntityNames.ServiceCreated));
-                rabbitConfigurator.Message<ServiceUpdated>(m => m.SetEntityName(MessagingEntityNames.ServiceUpdated));
-                rabbitConfigurator.Message<ServiceDeleted>(m => m.SetEntityName(MessagingEntityNames.ServiceDeleted));
-                rabbitConfigurator.Message<SpecializationCreated>(m => m.SetEntityName(MessagingEntityNames.SpecializationCreated));
-                rabbitConfigurator.Message<SpecializationUpdated>(m => m.SetEntityName(MessagingEntityNames.SpecializationUpdated));
-                rabbitConfigurator.Message<SpecializationDeleted>(m => m.SetEntityName(MessagingEntityNames.SpecializationDeleted));
+                ConfigureMessage<ServiceCreated>(rabbitConfigurator, MessagingEntityNames.ServiceCreated);
+                ConfigureMessage<ServiceUpdated>(rabbitConfigurator, MessagingEntityNames.ServiceUpdated);
+                ConfigureMessage<ServiceDeleted>(rabbitConfigurator, MessagingEntityNames.ServiceDeleted);
+                ConfigureMessage<SpecializationCreated>(rabbitConfigurator, MessagingEntityNames.SpecializationCreated);
+                ConfigureMessage<SpecializationUpdated>(rabbitConfigurator, MessagingEntityNames.SpecializationUpdated);
+                ConfigureMessage<SpecializationDeleted>(rabbitConfigurator, MessagingEntityNames.SpecializationDeleted);
+
+                ConfigureMessage<ServiceCreated>(rabbitConfigurator, MessagingEntityNames.ServiceCreated);
+                ConfigureMessage<ServiceUpdated>(rabbitConfigurator, MessagingEntityNames.ServiceUpdated);
+                ConfigureMessage<ServiceDeleted>(rabbitConfigurator, MessagingEntityNames.ServiceDeleted);
+                ConfigureMessage<SpecializationCreated>(rabbitConfigurator, MessagingEntityNames.SpecializationCreated);
+                ConfigureMessage<SpecializationUpdated>(rabbitConfigurator, MessagingEntityNames.SpecializationUpdated);
+                ConfigureMessage<SpecializationDeleted>(rabbitConfigurator, MessagingEntityNames.SpecializationDeleted);
 
                 rabbitConfigurator.ConfigureEndpoints(context);
             });

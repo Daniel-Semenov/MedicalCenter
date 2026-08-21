@@ -1,8 +1,8 @@
 ﻿using MediatR;
+using Messaging.Contracts.Events.Enums;
+using Messaging.Contracts.Events.Services;
 using Services.Application.Interfaces;
 using Services.Application.Notifications.Services;
-using Services.Messaging.Contracts.Enums;
-using Services.Messaging.Contracts.Events.Services;
 
 namespace Services.Infrastructure.Notifications.Handlers.Services;
 
@@ -23,9 +23,8 @@ public class ServiceUpdatedNotificationHandler : INotificationHandler<ServiceUpd
         {
             Id = service.Id,
             Name = service.Name,
-            Price = service.Price,
             SpecializationId = service.SpecializationId,
-            Status = (ServiceStatus)service.Status,
+            Status = (ServiceStatusSnapshot)service.Status,
             UpdatedAt = service.UpdatedAt!.Value
         }, cancellationToken);
     }

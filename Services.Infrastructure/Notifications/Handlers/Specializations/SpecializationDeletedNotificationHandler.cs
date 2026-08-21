@@ -1,7 +1,7 @@
 ﻿using MediatR;
+using Messaging.Contracts.Events.Specializations;
 using Services.Application.Interfaces;
 using Services.Application.Notifications.Specializations;
-using Services.Messaging.Contracts.Events.Specializations;
 
 namespace Services.Infrastructure.Notifications.Handlers.Specializations;
 

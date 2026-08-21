@@ -1,8 +1,8 @@
 ﻿using MediatR;
+using Messaging.Contracts.Events.Enums;
+using Messaging.Contracts.Events.Specializations;
 using Services.Application.Interfaces;
 using Services.Application.Notifications.Specializations;
-using Services.Messaging.Contracts.Enums;
-using Services.Messaging.Contracts.Events.Specializations;
 
 namespace Services.Infrastructure.Notifications.Handlers.Specializations;
 
@@ -23,7 +23,7 @@ public class SpecializationUpdatedNotificationHandler : INotificationHandler<Spe
         {
             Id = specialization.Id,
             Name = specialization.Name,
-            Status = (SpecializationStatus)specialization.Status,
+            Status = (SpecializationStatusSnapshot)specialization.Status,
             UpdatedAt = specialization.UpdatedAt!.Value
         }, cancellationToken);
     }

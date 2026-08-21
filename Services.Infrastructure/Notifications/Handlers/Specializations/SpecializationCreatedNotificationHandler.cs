@@ -1,8 +1,9 @@
 ﻿using MediatR;
+using Messaging.Contracts.Events.Enums;
+using Messaging.Contracts.Events.Specializations;
 using Services.Application.Interfaces;
 using Services.Application.Notifications.Specializations;
-using Services.Messaging.Contracts.Enums;
-using Services.Messaging.Contracts.Events.Specializations;
+using Services.Domain.Enums;
 
 namespace Services.Infrastructure.Notifications.Handlers.Specializations;
 
@@ -23,15 +24,13 @@ public class SpecializationCreatedNotificationHandler : INotificationHandler<Spe
         {
             Id = specialization.Id,
             Name = specialization.Name,
-            Status = (SpecializationStatus)specialization.Status,
+            Status = (SpecializationStatusSnapshot)specialization.Status,
             CreatedAt = specialization.CreatedAt,
-            Services = specialization.Services.Select(s => new SpecializationServiceItem
+            Services = specialization.Services.Select(s => new SpecializationServiceItemSnapshot
             {
                 Id = s.Id,
                 Name = s.Name,
-                Price = s.Price,
-                Category = (ServiceCategory)s.Category,
-                Status = (ServiceStatus)s.Status
+                Status = (ServiceStatusSnapshot)s.Status
             }).ToList()
         }, cancellationToken);
     }
