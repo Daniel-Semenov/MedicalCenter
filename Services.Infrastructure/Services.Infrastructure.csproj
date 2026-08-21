@@ -17,6 +17,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Services.Application\Services.Application.csproj" />
+      <ProjectReference Include="..\..\Messaging.Contracts\Messaging.Contracts\Messaging.Contracts.csproj" />
     </ItemGroup>
 
     <ItemGroup>
