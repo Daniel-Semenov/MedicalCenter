@@ -17,10 +17,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Appointments.Application\Appointments.Application.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Messaging\Contracts\Events\" />
+      <ProjectReference Include="..\..\Messaging.Contracts\Messaging.Contracts\Messaging.Contracts.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,8 +1,8 @@
 ﻿using Appointments.Application.Interfaces;
 using Appointments.Domain.Entities.Snapshots;
 using MassTransit;
+using Messaging.Contracts.Events.Patients;
 using Microsoft.Extensions.Logging;
-using Profiles.Infrastructure.Messaging.Contracts.Events.Patients;
 
 namespace Appointments.Infrastructure.Messaging.Consumers;
 
