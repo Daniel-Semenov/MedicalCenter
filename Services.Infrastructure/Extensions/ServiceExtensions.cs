@@ -1,4 +1,6 @@
 ﻿using MassTransit;
+using Messaging.Contracts.Constants;
+using Messaging.Contracts.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,7 +8,6 @@ using Microsoft.Extensions.Options;
 using Services.Application.Interfaces;
 using Services.Infrastructure.Data;
 using Services.Infrastructure.Messaging;
-using Services.Infrastructure.Messaging.Constants;
 using Services.Infrastructure.Repositories;
 using Services.Messaging.Contracts.Events.Services;
 using Services.Messaging.Contracts.Events.Specializations;
