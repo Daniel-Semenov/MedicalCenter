@@ -1,7 +1,7 @@
 ﻿using Authorization.Application.Interfaces;
 using Authorization.Application.Notifications;
-using Authorization.Infrastructure.Messaging.Contracts.Events.Accounts;
 using MediatR;
+using Messaging.Contracts.Events.Accounts;
 
 namespace Authorization.Infrastructure.Notifications.Handlers;
 
