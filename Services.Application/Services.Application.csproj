@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="MassTransit" Version="8.2.3" />
       <PackageReference Include="FluentValidation" Version="12.1.1" />
       <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
       <PackageReference Include="MediatR" Version="14.2.0" />
@@ -14,6 +15,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Services.Domain\Services.Domain.csproj" />
+      <ProjectReference Include="..\..\Messaging.Contracts\Messaging.Contracts\Messaging.Contracts.csproj" />
     </ItemGroup>
 
 </Project>

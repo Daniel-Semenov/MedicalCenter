@@ -1,6 +1,8 @@
 ﻿using MediatR;
+using MassTransit;
+using Messaging.Contracts.Events.Specializations;
+using Messaging.Contracts.Events.Enums;
 using Services.Application.Interfaces;
-using Services.Application.Notifications.Specializations;
 using Services.Domain.Entities;
 using Services.Domain.Exceptions;
 
@@ -9,14 +11,14 @@ namespace Services.Application.Commands.Specializations;
 public class UpdateSpecializationCommandHandler : IRequestHandler<UpdateSpecializationCommand, Unit>
 {
     private readonly ISpecializationRepository _specializationRepository;
-    private readonly IPublisher _publisher;
+    private readonly IPublishEndpoint _publishEndpoint;
 
     public UpdateSpecializationCommandHandler(
         ISpecializationRepository specializationRepository,
-        IPublisher publisher)
+        IPublishEndpoint publishEndpoint) 
     {
         _specializationRepository = specializationRepository;
-        _publisher = publisher;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task<Unit> Handle(UpdateSpecializationCommand request, CancellationToken cancellationToken)
@@ -41,7 +43,15 @@ public class UpdateSpecializationCommandHandler : IRequestHandler<UpdateSpeciali
 
         await _specializationRepository.UpdateAsync(specialization, cancellationToken);
 
-        await _publisher.Publish(new SpecializationUpdatedNotification(specialization), cancellationToken);
+        var integrationEvent = new SpecializationUpdated
+        {
+            Id = specialization.Id,
+            Name = specialization.Name,
+            Status = (SpecializationStatusSnapshot)specialization.Status,
+            UpdatedAt = specialization.UpdatedAt.Value
+        };
+
+        await _publishEndpoint.Publish(integrationEvent, cancellationToken);
 
         await _specializationRepository.SaveChangesAsync(cancellationToken);
 

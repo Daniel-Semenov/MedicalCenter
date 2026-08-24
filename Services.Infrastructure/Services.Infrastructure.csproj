@@ -20,8 +20,4 @@
       <ProjectReference Include="..\..\Messaging.Contracts\Messaging.Contracts\Messaging.Contracts.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Notifications\" />
-    </ItemGroup>
-
 </Project>

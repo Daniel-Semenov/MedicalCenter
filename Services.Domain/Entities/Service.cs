@@ -12,5 +12,5 @@ public class Service
     public Guid SpecializationId { get; set; }   
     public Specialization Specialization { get; set; }
     public DateTime CreatedAt { get; set; }
-    public DateTime? UpdatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 }

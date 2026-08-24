@@ -1,6 +1,7 @@
 ﻿using MediatR;
+using MassTransit;
+using Messaging.Contracts.Events.Services;
 using Services.Application.Interfaces;
-using Services.Application.Notifications.Services;
 using Services.Domain.Entities;
 using Services.Domain.Exceptions;
 
@@ -9,14 +10,14 @@ namespace Services.Application.Commands.Services;
 public class DeleteServiceCommandHandler : IRequestHandler<DeleteServiceCommand, Unit>
 {
     private readonly IServiceRepository _serviceRepository;
-    private readonly IPublisher _publisher;
+    private readonly IPublishEndpoint _publishEndpoint; 
 
     public DeleteServiceCommandHandler(
         IServiceRepository serviceRepository,
-        IPublisher publisher)
+        IPublishEndpoint publishEndpoint) 
     {
         _serviceRepository = serviceRepository;
-        _publisher = publisher;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task<Unit> Handle(DeleteServiceCommand request, CancellationToken cancellationToken)
@@ -30,7 +31,13 @@ public class DeleteServiceCommandHandler : IRequestHandler<DeleteServiceCommand,
 
         await _serviceRepository.DeleteAsync(service, cancellationToken);
 
-        await _publisher.Publish(new ServiceDeletedNotification(service.Id), cancellationToken);
+        var integrationEvent = new ServiceDeleted
+        {
+            Id = service.Id,
+            DeletedAt = DateTime.UtcNow
+        };
+
+        await _publishEndpoint.Publish(integrationEvent, cancellationToken);
 
         await _serviceRepository.SaveChangesAsync(cancellationToken);
 

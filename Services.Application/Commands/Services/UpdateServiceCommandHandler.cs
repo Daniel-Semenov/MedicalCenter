@@ -1,7 +1,8 @@
 ﻿using MediatR;
+using MassTransit;
+using Messaging.Contracts.Events.Services; 
+using Messaging.Contracts.Events.Enums;   
 using Services.Application.Interfaces;
-using Services.Application.Notifications;
-using Services.Application.Notifications.Services;
 using Services.Domain.Entities;
 using Services.Domain.Exceptions;
 
@@ -10,14 +11,14 @@ namespace Services.Application.Commands.Services;
 public class UpdateServiceCommandHandler : IRequestHandler<UpdateServiceCommand, Unit>
 {
     private readonly IServiceRepository _serviceRepository;
-    private readonly IPublisher _publisher;
+    private readonly IPublishEndpoint _publishEndpoint;
 
     public UpdateServiceCommandHandler(
         IServiceRepository serviceRepository,
-        IPublisher publisher)
+        IPublishEndpoint publishEndpoint)
     {
         _serviceRepository = serviceRepository;
-        _publisher = publisher;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task<Unit> Handle(UpdateServiceCommand request, CancellationToken cancellationToken)
@@ -41,10 +42,18 @@ public class UpdateServiceCommandHandler : IRequestHandler<UpdateServiceCommand,
         service.Status = request.Status;
         service.UpdatedAt = DateTime.UtcNow;
 
+        var integrationEvent = new ServiceUpdated
+        {
+            Id = service.Id,
+            Name = service.Name,
+            SpecializationId = service.SpecializationId,
+            Status = (ServiceStatusSnapshot)service.Status, 
+            UpdatedAt = service.UpdatedAt
+        };
+
+        await _publishEndpoint.Publish(integrationEvent, cancellationToken);
+
         await _serviceRepository.UpdateAsync(service, cancellationToken);
-
-        await _publisher.Publish(new ServiceUpdatedNotification(service), cancellationToken);
-
         await _serviceRepository.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;

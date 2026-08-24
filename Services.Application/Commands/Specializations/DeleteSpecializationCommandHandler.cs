@@ -1,6 +1,7 @@
 ﻿using MediatR;
+using MassTransit;
+using Messaging.Contracts.Events.Specializations;
 using Services.Application.Interfaces;
-using Services.Application.Notifications.Specializations;
 using Services.Domain.Entities;
 using Services.Domain.Exceptions;
 
@@ -9,14 +10,14 @@ namespace Services.Application.Commands.Specializations;
 public class DeleteSpecializationCommandHandler : IRequestHandler<DeleteSpecializationCommand, Unit>
 {
     private readonly ISpecializationRepository _specializationRepository;
-    private readonly IPublisher _publisher;
+    private readonly IPublishEndpoint _publishEndpoint; 
 
     public DeleteSpecializationCommandHandler(
         ISpecializationRepository specializationRepository,
-        IPublisher publisher)
+        IPublishEndpoint publishEndpoint) 
     {
         _specializationRepository = specializationRepository;
-        _publisher = publisher;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task<Unit> Handle(DeleteSpecializationCommand request, CancellationToken cancellationToken)
@@ -30,7 +31,13 @@ public class DeleteSpecializationCommandHandler : IRequestHandler<DeleteSpeciali
 
         await _specializationRepository.DeleteAsync(specialization, cancellationToken);
 
-        await _publisher.Publish(new SpecializationDeletedNotification(specialization.Id), cancellationToken);
+        var integrationEvent = new SpecializationDeleted
+        {
+            Id = specialization.Id,
+            DeletedAt = DateTime.UtcNow
+        };
+
+        await _publishEndpoint.Publish(integrationEvent, cancellationToken);
 
         await _specializationRepository.SaveChangesAsync(cancellationToken);
 
