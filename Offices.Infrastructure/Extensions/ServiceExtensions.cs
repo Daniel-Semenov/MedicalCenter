@@ -1,6 +1,4 @@
 ﻿using MassTransit;
-using Messaging.Contracts.Constants;
-using Messaging.Contracts.Events.Offices;
 using Messaging.Contracts.Options;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -50,12 +48,15 @@ public static class ServiceExtensions
 
         return services;
     }
-
-    private static IServiceCollection AddMessaging(this IServiceCollection services, IConfiguration configuration)
+    private static IServiceCollection AddMessaging(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
         services.Configure<RabbitMqOptions>(options =>
         {
-            configuration.GetSection(RabbitMqOptions.SectionName).Bind(options);
+            configuration
+                .GetSection(RabbitMqOptions.SectionName)
+                .Bind(options);
         });
 
         services.AddScoped<IEventPublisher, MassTransitEventPublisher>();
@@ -64,20 +65,17 @@ public static class ServiceExtensions
         {
             busConfigurator.UsingRabbitMq((context, rabbitConfigurator) =>
             {
-                var rabbitMqOptions = context.GetRequiredService<IOptions<RabbitMqOptions>>().Value;
+                var rabbitMqOptions =
+                    context.GetRequiredService<IOptions<RabbitMqOptions>>().Value;
 
-                rabbitConfigurator.Host(rabbitMqOptions.Host, rabbitMqOptions.VirtualHost, hostConfigurator =>
-                {
-                    hostConfigurator.Username(rabbitMqOptions.Username);
-                    hostConfigurator.Password(rabbitMqOptions.Password);
-                });
-
-                rabbitConfigurator.Message<OfficeCreated>(m => m.SetEntityName(MessagingEntityNames.OfficeCreated));
-                rabbitConfigurator.Message<OfficeUpdated>(m => m.SetEntityName(MessagingEntityNames.OfficeUpdated));
-                rabbitConfigurator.Message<OfficeStatusChanged>(m => m.SetEntityName(MessagingEntityNames.OfficeStatusChanged));
-                rabbitConfigurator.Message<OfficeDeleted>(m => m.SetEntityName(MessagingEntityNames.OfficeDeleted));
-
-                rabbitConfigurator.ConfigureEndpoints(context);
+                rabbitConfigurator.Host(
+                    rabbitMqOptions.Host,
+                    rabbitMqOptions.VirtualHost,
+                    hostConfigurator =>
+                    {
+                        hostConfigurator.Username(rabbitMqOptions.Username);
+                        hostConfigurator.Password(rabbitMqOptions.Password);
+                    });
             });
         });
 
