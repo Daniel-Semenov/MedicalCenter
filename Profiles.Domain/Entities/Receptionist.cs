@@ -12,4 +12,6 @@ public class Receptionist
     public string Email { get; set; } = string.Empty;
     public string? OfficeName { get; set; }
     public string? OfficeAddress { get; set; }
+    public bool IsActive { get; set; }
+    
 }

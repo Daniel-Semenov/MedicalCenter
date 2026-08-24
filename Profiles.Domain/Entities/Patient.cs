@@ -11,4 +11,6 @@ public class Patient
     public string? MiddleName { get; set; }
     public string PhoneNumber { get; set; } = string.Empty;
     public DateTime DateOfBirth { get; set; }
+    public bool IsActive { get; set; }
+    
 }

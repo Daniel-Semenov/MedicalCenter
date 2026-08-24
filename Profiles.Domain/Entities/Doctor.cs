@@ -14,5 +14,6 @@ public class Doctor
     public string? OfficeName { get; set; }
     public string? OfficeAddress { get; set; }
     public string? SpecializationName { get; set; }
+    public bool IsActive { get; set; }
     public ICollection<DoctorService> Services { get; set; } = new List<DoctorService>();
 }
