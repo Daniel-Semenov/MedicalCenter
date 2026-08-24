@@ -93,8 +93,6 @@ public class PatientRepository : IPatientRepository
         
         await _context.Patients.AddAsync(patient, cancellationToken);
         
-        await _context.SaveChangesAsync(cancellationToken);
-
         return Result<Patient>.Success(patient);
     }
 
@@ -111,8 +109,6 @@ public class PatientRepository : IPatientRepository
         }
 
         _context.Patients.Update(patient);
-
-        await _context.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }
@@ -131,8 +127,6 @@ public class PatientRepository : IPatientRepository
 
         _context.Patients.Remove(patient);
         
-        await _context.SaveChangesAsync(cancellationToken);
-
         return Result.Success();
     }
 
@@ -161,5 +155,12 @@ public class PatientRepository : IPatientRepository
         };
 
         return Result<PagedResult<Patient>>.Success(pagedResult);
+    }
+    
+    public async Task<Result> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        await _context.SaveChangesAsync(cancellationToken);
+        
+        return Result.Success();
     }
 }

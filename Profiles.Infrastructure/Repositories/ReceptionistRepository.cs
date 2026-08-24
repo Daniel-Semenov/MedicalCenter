@@ -78,8 +78,6 @@ public class ReceptionistRepository : IReceptionistRepository
             receptionist,
             cancellationToken);
 
-        await _context.SaveChangesAsync(cancellationToken);
-
         return Result<Receptionist>.Success(receptionist);
     }
 
@@ -98,8 +96,6 @@ public class ReceptionistRepository : IReceptionistRepository
         }
 
         _context.Receptionists.Update(receptionist);
-
-        await _context.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }
@@ -120,8 +116,6 @@ public class ReceptionistRepository : IReceptionistRepository
 
         _context.Receptionists.Remove(receptionist);
         
-        await _context.SaveChangesAsync(cancellationToken);
-
         return Result.Success();
     }
 
@@ -150,5 +144,13 @@ public class ReceptionistRepository : IReceptionistRepository
         };
 
         return Result<PagedResult<Receptionist>>.Success(pagedResult);
+    }
+    
+    
+    public async Task<Result> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        await _context.SaveChangesAsync(cancellationToken);
+        
+        return Result.Success();
     }
 }

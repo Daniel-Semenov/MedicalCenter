@@ -1,10 +1,9 @@
-﻿using MediatR;
+﻿using MassTransit;
+using Messaging.Contracts.Events.Doctors; 
 using Profiles.Application.DTO_s.Request;
 using Profiles.Application.DTO_s.Response;
-using Profiles.Application.Interfaces;
 using Profiles.Application.Interfaces.Repositories;
 using Profiles.Application.Interfaces.Services;
-using Profiles.Application.Notifications.Doctors;
 using Profiles.Domain.Entities;
 using Profiles.Shared.Common;
 using Profiles.Shared.Common.Pagination;
@@ -14,14 +13,14 @@ namespace Profiles.Application.Services;
 public class DoctorService : IDoctorService
 {
     private readonly IDoctorRepository _doctorRepository;
-    private readonly IMediator _mediator;
+    private readonly IPublishEndpoint _publishEndpoint; 
 
     public DoctorService(
         IDoctorRepository doctorRepository,
-        IMediator mediator)
+        IPublishEndpoint publishEndpoint) 
     {
         _doctorRepository = doctorRepository;
-        _mediator = mediator;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task<Result<DoctorResponseDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -126,15 +125,20 @@ public class DoctorService : IDoctorService
             return Result<DoctorResponseDto>.Failure(result.Error);
         }
 
-        await _mediator.Publish(new DoctorCreatedNotification(
-            result.Value.Id,
-            result.Value.FirstName,
-            result.Value.LastName,
-            result.Value.MiddleName,
-            result.Value.SpecializationId,
-            result.Value.OfficeId,
-            result.Value.CareerStartYear
-        ), cancellationToken);
+        var integrationEvent = new DoctorCreated
+        {
+            Id = result.Value.Id,
+            SpecializationId = result.Value.SpecializationId,
+            OfficeId = result.Value.OfficeId,
+            CareerStartYear = result.Value.CareerStartYear,
+            FirstName = result.Value.FirstName,
+            LastName = result.Value.LastName,
+            MiddleName = result.Value.MiddleName,
+        };
+
+        await _publishEndpoint.Publish(integrationEvent, cancellationToken);
+
+        await _doctorRepository.SaveChangesAsync(cancellationToken);
 
         return Result<DoctorResponseDto>.Success(MapToDto(result.Value));
     }
@@ -174,15 +178,21 @@ public class DoctorService : IDoctorService
             return Result<DoctorResponseDto>.Failure(updateResult.Error);
         }
 
-        await _mediator.Publish(new DoctorUpdatedNotification(
-            doctor.Id,
-            doctor.FirstName,
-            doctor.LastName,
-            doctor.MiddleName,
-            doctor.SpecializationId,
-            doctor.OfficeId,
-            doctor.CareerStartYear
-        ), cancellationToken);
+        var integrationEvent = new DoctorUpdated
+        {
+            Id = doctor.Id,
+            SpecializationId = doctor.SpecializationId,
+            OfficeId = doctor.OfficeId,
+            CareerStartYear = doctor.CareerStartYear,
+            FirstName = doctor.FirstName,
+            LastName = doctor.LastName,
+            MiddleName = doctor.MiddleName
+        };
+
+        await _publishEndpoint.Publish(integrationEvent, cancellationToken);
+
+        // ✅ 3. СОХРАНЯЕМ всё вместе (и Doctor, и OutboxMessage)
+        await _doctorRepository.SaveChangesAsync(cancellationToken);
 
         return Result<DoctorResponseDto>.Success(MapToDto(doctor));
     }
@@ -196,10 +206,15 @@ public class DoctorService : IDoctorService
             return deleteResult;
         }
 
-        await _mediator.Publish(new DoctorDeletedNotification(
-            id,
-            DateTime.UtcNow
-        ), cancellationToken);
+        var integrationEvent = new DoctorDeleted
+        {
+            Id = id,
+            DeletedAt = DateTime.UtcNow
+        };
+
+        await _publishEndpoint.Publish(integrationEvent, cancellationToken);
+
+        await _doctorRepository.SaveChangesAsync(cancellationToken);
 
         return deleteResult;
     }

@@ -1,9 +1,9 @@
-﻿using MediatR;
+﻿using MassTransit;
+using Messaging.Contracts.Events.Patients;
 using Profiles.Application.DTO_s.Request;
 using Profiles.Application.DTO_s.Response;
 using Profiles.Application.Interfaces.Repositories;
 using Profiles.Application.Interfaces.Services;
-using Profiles.Application.Notifications.Patients;
 using Profiles.Domain.Entities;
 using Profiles.Shared.Common;
 using Profiles.Shared.Common.Pagination;
@@ -13,14 +13,14 @@ namespace Profiles.Application.Services;
 public class PatientService : IPatientService
 {
     private readonly IPatientRepository _patientRepository;
-    private readonly IMediator _mediator;
+    private readonly IPublishEndpoint _publishEndpoint; 
 
     public PatientService(
         IPatientRepository patientRepository,
-        IMediator mediator)
+        IPublishEndpoint publishEndpoint) 
     {
         _patientRepository = patientRepository;
-        _mediator = mediator;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task<Result<PatientResponseDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -103,13 +103,23 @@ public class PatientService : IPatientService
             return Result<PatientResponseDto>.Failure(result.Error);
         }
 
-        await _mediator.Publish(new PatientCreatedNotification(
-            result.Value.Id,
-            result.Value.FirstName,
-            result.Value.LastName,
-            result.Value.MiddleName,
-            result.Value.DateOfBirth
-        ), cancellationToken);
+        var integrationEvent = new PatientCreated
+        {
+            Id = result.Value.Id,
+            FirstName = result.Value.FirstName,
+            LastName = result.Value.LastName,
+            MiddleName = result.Value.MiddleName,
+            DateOfBirth = result.Value.DateOfBirth,
+        };
+
+        await _publishEndpoint.Publish(integrationEvent, cancellationToken);
+
+        var saveResult = await _patientRepository.SaveChangesAsync(cancellationToken);
+        
+        if (!saveResult.IsSuccess)
+        {
+            return Result<PatientResponseDto>.Failure(saveResult.Error);
+        }
 
         return Result<PatientResponseDto>.Success(MapToDto(result.Value));
     }
@@ -139,13 +149,23 @@ public class PatientService : IPatientService
             return Result<PatientResponseDto>.Failure(updateResult.Error);
         }
 
-        await _mediator.Publish(new PatientUpdatedNotification(
-            patient.Id,
-            patient.FirstName,
-            patient.LastName,
-            patient.MiddleName,
-            patient.DateOfBirth
-        ), cancellationToken);
+        var integrationEvent = new PatientUpdated
+        {
+            Id = patient.Id,
+            FirstName = patient.FirstName,
+            LastName = patient.LastName,
+            MiddleName = patient.MiddleName,
+            DateOfBirth = patient.DateOfBirth,
+        };
+
+        await _publishEndpoint.Publish(integrationEvent, cancellationToken);
+
+        var saveResult = await _patientRepository.SaveChangesAsync(cancellationToken);
+        
+        if (!saveResult.IsSuccess)
+        {
+            return Result<PatientResponseDto>.Failure(saveResult.Error);
+        }
 
         return Result<PatientResponseDto>.Success(MapToDto(patient));
     }
@@ -159,10 +179,20 @@ public class PatientService : IPatientService
             return deleteResult;
         }
 
-        await _mediator.Publish(new PatientDeletedNotification(
-            id,
-            DateTime.UtcNow
-        ), cancellationToken);
+        var integrationEvent = new PatientDeleted
+        {
+            Id = id,
+            DeletedAt = DateTime.UtcNow
+        };
+
+        await _publishEndpoint.Publish(integrationEvent, cancellationToken);
+
+        var saveResult = await _patientRepository.SaveChangesAsync(cancellationToken);
+        
+        if (!saveResult.IsSuccess)
+        {
+            return saveResult;
+        }
 
         return deleteResult;
     }

@@ -14,4 +14,5 @@ public interface IDoctorRepository
     Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     Task<Result<PagedResult<Doctor>>> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default);
     Task<Result<PagedResult<Doctor>>> GetBySpecializationPagedAsync(Guid specializationId, int page, int pageSize, CancellationToken cancellationToken = default);
+    Task<Result> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -1,8 +1,8 @@
 ﻿using MassTransit;
 using Microsoft.Extensions.Logging;
-using Profiles.Domain.Entities;
 using Messaging.Contracts.Events.Accounts;
 using Profiles.Application.Interfaces.Repositories;
+using Profiles.Domain.Entities;
 
 namespace Profiles.Infrastructure.Messaging.Consumers;
 
@@ -32,39 +32,74 @@ public class AccountSyncConsumer :
     {
         var message = context.Message;
 
-        _logger.LogInformation("Received AccountCreated event: AccountId={AccountId}, Role={Role}", message.Id, message.Role);
+        _logger.LogInformation(
+            "Received AccountCreated event: AccountId={AccountId}, Role={Role}",
+            message.Id,
+            message.Role);
 
-        await CreateProfileByRole(message.Id, message.Role, context.CancellationToken);
+        await CreateProfileByRole(
+            message.Id,
+            message.Role,
+            context.CancellationToken);
     }
 
     public async Task Consume(ConsumeContext<AccountUpdated> context)
     {
         var message = context.Message;
 
-        _logger.LogInformation("Received AccountUpdated event: AccountId={AccountId}", message.Id);
+        _logger.LogInformation(
+            "Received AccountUpdated event: AccountId={AccountId}",
+            message.Id);
 
-        await UpdateProfileByRole(message.Id, message.FirstName, message.LastName, message.MiddleName, context.CancellationToken);
+        await UpdateProfileByRole(
+            message.Id,
+            message.FirstName,
+            message.LastName,
+            message.MiddleName,
+            context.CancellationToken);
     }
 
     public async Task Consume(ConsumeContext<AccountDeactivated> context)
     {
         var message = context.Message;
 
-        _logger.LogInformation("Received AccountDeactivated event: AccountId={AccountId}", message.Id);
+        _logger.LogInformation(
+            "Received AccountDeactivated event: AccountId={AccountId}",
+            message.Id);
 
-        await DeleteProfileByAccountId(message.Id, context.CancellationToken);
+        await DeleteProfileByAccountId(
+            message.Id,
+            context.CancellationToken);
     }
 
-    private async Task CreateProfileByRole(Guid accountId, string role, CancellationToken cancellationToken)
+    private async Task CreateProfileByRole(
+        Guid accountId,
+        string role,
+        CancellationToken cancellationToken)
     {
         switch (role)
         {
             case "Doctor":
-                var doctorExists = await _doctorRepository.GetByAccountIdAsync(accountId, cancellationToken);
+            {
+                var existingResult = await _doctorRepository.GetByAccountIdAsync(
+                    accountId,
+                    cancellationToken);
 
-                if (doctorExists.IsSuccess && doctorExists.Value is not null)
+                if (!existingResult.IsSuccess)
                 {
-                    _logger.LogWarning("Doctor profile already exists for AccountId: {AccountId}", accountId);
+                    _logger.LogError(
+                        "Failed to get Doctor profile for AccountId: {AccountId}. Error: {Error}",
+                        accountId,
+                        existingResult.Error);
+
+                    return;
+                }
+
+                if (existingResult.Value is not null)
+                {
+                    _logger.LogWarning(
+                        "Doctor profile already exists for AccountId: {AccountId}",
+                        accountId);
 
                     return;
                 }
@@ -76,18 +111,38 @@ public class AccountSyncConsumer :
                     CareerStartYear = DateTime.Now.Year
                 };
 
-                await _doctorRepository.CreateAsync(doctor, cancellationToken);
+                await _doctorRepository.CreateAsync(
+                    doctor,
+                    cancellationToken);
 
-                _logger.LogInformation("Doctor profile created for AccountId: {AccountId}", accountId);
+                _logger.LogInformation(
+                    "Doctor profile created for AccountId: {AccountId}",
+                    accountId);
 
                 break;
+            }
 
             case "Patient":
-                var patientExists = await _patientRepository.GetByAccountIdAsync(accountId, cancellationToken);
+            {
+                var existingResult = await _patientRepository.GetByAccountIdAsync(
+                    accountId,
+                    cancellationToken);
 
-                if (patientExists.IsSuccess && patientExists.Value is not null)
+                if (!existingResult.IsSuccess)
                 {
-                    _logger.LogWarning("Patient profile already exists for AccountId: {AccountId}", accountId);
+                    _logger.LogError(
+                        "Failed to get Patient profile for AccountId: {AccountId}. Error: {Error}",
+                        accountId,
+                        existingResult.Error);
+
+                    return;
+                }
+
+                if (existingResult.Value is not null)
+                {
+                    _logger.LogWarning(
+                        "Patient profile already exists for AccountId: {AccountId}",
+                        accountId);
 
                     return;
                 }
@@ -99,18 +154,38 @@ public class AccountSyncConsumer :
                     IsLinkedToAccount = true
                 };
 
-                await _patientRepository.CreateAsync(patient, cancellationToken);
+                await _patientRepository.CreateAsync(
+                    patient,
+                    cancellationToken);
 
-                _logger.LogInformation("Patient profile created for AccountId: {AccountId}", accountId);
+                _logger.LogInformation(
+                    "Patient profile created for AccountId: {AccountId}",
+                    accountId);
 
                 break;
+            }
 
             case "Receptionist":
-                var receptionistExists = await _receptionistRepository.GetByAccountIdAsync(accountId, cancellationToken);
+            {
+                var existingResult = await _receptionistRepository.GetByAccountIdAsync(
+                    accountId,
+                    cancellationToken);
 
-                if (receptionistExists.IsSuccess && receptionistExists.Value is not null)
+                if (!existingResult.IsSuccess)
                 {
-                    _logger.LogWarning("Receptionist profile already exists for AccountId: {AccountId}", accountId);
+                    _logger.LogError(
+                        "Failed to get Receptionist profile for AccountId: {AccountId}. Error: {Error}",
+                        accountId,
+                        existingResult.Error);
+
+                    return;
+                }
+
+                if (existingResult.Value is not null)
+                {
+                    _logger.LogWarning(
+                        "Receptionist profile already exists for AccountId: {AccountId}",
+                        accountId);
 
                     return;
                 }
@@ -121,24 +196,49 @@ public class AccountSyncConsumer :
                     AccountId = accountId
                 };
 
-                await _receptionistRepository.CreateAsync(receptionist, cancellationToken);
+                await _receptionistRepository.CreateAsync(
+                    receptionist,
+                    cancellationToken);
 
-                _logger.LogInformation("Receptionist profile created for AccountId: {AccountId}", accountId);
+                _logger.LogInformation(
+                    "Receptionist profile created for AccountId: {AccountId}",
+                    accountId);
 
                 break;
+            }
 
             default:
-                _logger.LogWarning("Unknown role: {Role} for AccountId: {AccountId}", role, accountId);
+                _logger.LogWarning(
+                    "Unknown role: {Role} for AccountId: {AccountId}",
+                    role,
+                    accountId);
 
                 break;
         }
     }
 
-    private async Task UpdateProfileByRole(Guid accountId, string firstName, string lastName, string? middleName, CancellationToken cancellationToken)
+    private async Task UpdateProfileByRole(
+        Guid accountId,
+        string firstName,
+        string lastName,
+        string? middleName,
+        CancellationToken cancellationToken)
     {
-        var doctorResult = await _doctorRepository.GetByAccountIdAsync(accountId, cancellationToken);
+        var doctorResult = await _doctorRepository.GetByAccountIdAsync(
+            accountId,
+            cancellationToken);
 
-        if (doctorResult.IsSuccess && doctorResult.Value is not null)
+        if (!doctorResult.IsSuccess)
+        {
+            _logger.LogError(
+                "Failed to get Doctor profile for AccountId: {AccountId}. Error: {Error}",
+                accountId,
+                doctorResult.Error);
+
+            return;
+        }
+
+        if (doctorResult.Value is not null)
         {
             var doctor = doctorResult.Value;
 
@@ -146,16 +246,32 @@ public class AccountSyncConsumer :
             doctor.LastName = lastName;
             doctor.MiddleName = middleName;
 
-            await _doctorRepository.UpdateAsync(doctor, cancellationToken);
+            await _doctorRepository.UpdateAsync(
+                doctor,
+                cancellationToken);
 
-            _logger.LogInformation("Doctor profile updated for AccountId: {AccountId}", accountId);
+            _logger.LogInformation(
+                "Doctor profile updated for AccountId: {AccountId}",
+                accountId);
 
             return;
         }
 
-        var patientResult = await _patientRepository.GetByAccountIdAsync(accountId, cancellationToken);
+        var patientResult = await _patientRepository.GetByAccountIdAsync(
+            accountId,
+            cancellationToken);
 
-        if (patientResult.IsSuccess && patientResult.Value is not null)
+        if (!patientResult.IsSuccess)
+        {
+            _logger.LogError(
+                "Failed to get Patient profile for AccountId: {AccountId}. Error: {Error}",
+                accountId,
+                patientResult.Error);
+
+            return;
+        }
+
+        if (patientResult.Value is not null)
         {
             var patient = patientResult.Value;
 
@@ -163,16 +279,32 @@ public class AccountSyncConsumer :
             patient.LastName = lastName;
             patient.MiddleName = middleName;
 
-            await _patientRepository.UpdateAsync(patient, cancellationToken);
+            await _patientRepository.UpdateAsync(
+                patient,
+                cancellationToken);
 
-            _logger.LogInformation("Patient profile updated for AccountId: {AccountId}", accountId);
+            _logger.LogInformation(
+                "Patient profile updated for AccountId: {AccountId}",
+                accountId);
 
             return;
         }
 
-        var receptionistResult = await _receptionistRepository.GetByAccountIdAsync(accountId, cancellationToken);
+        var receptionistResult = await _receptionistRepository.GetByAccountIdAsync(
+            accountId,
+            cancellationToken);
 
-        if (receptionistResult.IsSuccess && receptionistResult.Value is not null)
+        if (!receptionistResult.IsSuccess)
+        {
+            _logger.LogError(
+                "Failed to get Receptionist profile for AccountId: {AccountId}. Error: {Error}",
+                accountId,
+                receptionistResult.Error);
+
+            return;
+        }
+
+        if (receptionistResult.Value is not null)
         {
             var receptionist = receptionistResult.Value;
 
@@ -180,51 +312,109 @@ public class AccountSyncConsumer :
             receptionist.LastName = lastName;
             receptionist.MiddleName = middleName;
 
-            await _receptionistRepository.UpdateAsync(receptionist, cancellationToken);
+            await _receptionistRepository.UpdateAsync(
+                receptionist,
+                cancellationToken);
 
-            _logger.LogInformation("Receptionist profile updated for AccountId: {AccountId}", accountId);
+            _logger.LogInformation(
+                "Receptionist profile updated for AccountId: {AccountId}",
+                accountId);
 
             return;
         }
 
-        _logger.LogWarning("No profile found for AccountId: {AccountId}", accountId);
+        _logger.LogWarning(
+            "No profile found for AccountId: {AccountId}",
+            accountId);
     }
 
-    private async Task DeleteProfileByAccountId(Guid accountId, CancellationToken cancellationToken)
+    private async Task DeleteProfileByAccountId(
+        Guid accountId,
+        CancellationToken cancellationToken)
     {
-        var doctorResult = await _doctorRepository.GetByAccountIdAsync(accountId, cancellationToken);
+        var doctorResult = await _doctorRepository.GetByAccountIdAsync(
+            accountId,
+            cancellationToken);
 
-        if (doctorResult.IsSuccess && doctorResult.Value is not null)
+        if (!doctorResult.IsSuccess)
         {
-            await _doctorRepository.DeleteAsync(doctorResult.Value.Id, cancellationToken);
-
-            _logger.LogInformation("Doctor profile deleted for AccountId: {AccountId}", accountId);
+            _logger.LogError(
+                "Failed to get Doctor profile for AccountId: {AccountId}. Error: {Error}",
+                accountId,
+                doctorResult.Error);
 
             return;
         }
 
-        var patientResult = await _patientRepository.GetByAccountIdAsync(accountId, cancellationToken);
-
-        if (patientResult.IsSuccess && patientResult.Value is not null)
+        if (doctorResult.Value is not null)
         {
-            await _patientRepository.DeleteAsync(patientResult.Value.Id, cancellationToken);
+            await _doctorRepository.DeleteAsync(
+                doctorResult.Value.Id,
+                cancellationToken);
 
-            _logger.LogInformation("Patient profile deleted for AccountId: {AccountId}", accountId);
+            _logger.LogInformation(
+                "Doctor profile deleted for AccountId: {AccountId}",
+                accountId);
 
             return;
         }
 
-        var receptionistResult = await _receptionistRepository.GetByAccountIdAsync(accountId, cancellationToken);
+        var patientResult = await _patientRepository.GetByAccountIdAsync(
+            accountId,
+            cancellationToken);
 
-        if (receptionistResult.IsSuccess && receptionistResult.Value is not null)
+        if (!patientResult.IsSuccess)
         {
-            await _receptionistRepository.DeleteAsync(receptionistResult.Value.Id, cancellationToken);
-
-            _logger.LogInformation("Receptionist profile deleted for AccountId: {AccountId}", accountId);
+            _logger.LogError(
+                "Failed to get Patient profile for AccountId: {AccountId}. Error: {Error}",
+                accountId,
+                patientResult.Error);
 
             return;
         }
 
-        _logger.LogWarning("No profile found for deletion: AccountId: {AccountId}", accountId);
+        if (patientResult.Value is not null)
+        {
+            await _patientRepository.DeleteAsync(
+                patientResult.Value.Id,
+                cancellationToken);
+
+            _logger.LogInformation(
+                "Patient profile deleted for AccountId: {AccountId}",
+                accountId);
+
+            return;
+        }
+
+        var receptionistResult = await _receptionistRepository.GetByAccountIdAsync(
+            accountId,
+            cancellationToken);
+
+        if (!receptionistResult.IsSuccess)
+        {
+            _logger.LogError(
+                "Failed to get Receptionist profile for AccountId: {AccountId}. Error: {Error}",
+                accountId,
+                receptionistResult.Error);
+
+            return;
+        }
+
+        if (receptionistResult.Value is not null)
+        {
+            await _receptionistRepository.DeleteAsync(
+                receptionistResult.Value.Id,
+                cancellationToken);
+
+            _logger.LogInformation(
+                "Receptionist profile deleted for AccountId: {AccountId}",
+                accountId);
+
+            return;
+        }
+
+        _logger.LogWarning(
+            "No profile found for deletion: AccountId: {AccountId}",
+            accountId);
     }
 }

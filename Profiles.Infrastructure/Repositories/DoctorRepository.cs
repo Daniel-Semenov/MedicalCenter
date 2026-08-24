@@ -88,8 +88,6 @@ public class DoctorRepository : IDoctorRepository
 
         await _context.Doctors.AddAsync(doctor, cancellationToken);
 
-        await _context.SaveChangesAsync(cancellationToken);
-
         return Result<Doctor>.Success(doctor);
     }
 
@@ -122,8 +120,6 @@ public class DoctorRepository : IDoctorRepository
 
         await _context.DoctorServices.AddRangeAsync(newServices, cancellationToken);
 
-        await _context.SaveChangesAsync(cancellationToken);
-
         return Result.Success();
     }
 
@@ -142,8 +138,6 @@ public class DoctorRepository : IDoctorRepository
         }
 
         _context.Doctors.Remove(doctor);
-
-        await _context.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }
@@ -206,5 +200,12 @@ public class DoctorRepository : IDoctorRepository
         };
 
         return Result<PagedResult<Doctor>>.Success(pagedResult);
+    }
+
+    public async Task<Result> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        await _context.SaveChangesAsync(cancellationToken);
+        
+        return Result.Success();
     }
 }

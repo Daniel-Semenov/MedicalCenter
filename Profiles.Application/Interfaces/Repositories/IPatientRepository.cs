@@ -15,4 +15,6 @@ public interface IPatientRepository
     Task<Result> UpdateAsync(Patient patient, CancellationToken cancellationToken = default);
     Task<Result> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     Task<Result<PagedResult<Patient>>> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default);
+    public Task<Result> SaveChangesAsync(CancellationToken cancellationToken = default);
+
 }

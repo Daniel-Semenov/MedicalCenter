@@ -1,9 +1,9 @@
-﻿using MediatR;
+﻿using MassTransit;
+using Messaging.Contracts.Events.Receptionist;
 using Profiles.Application.DTO_s.Request;
 using Profiles.Application.DTO_s.Response;
 using Profiles.Application.Interfaces.Repositories;
 using Profiles.Application.Interfaces.Services;
-using Profiles.Application.Notifications.Receptionists;
 using Profiles.Domain.Entities;
 using Profiles.Shared.Common;
 using Profiles.Shared.Common.Pagination;
@@ -13,14 +13,14 @@ namespace Profiles.Application.Services;
 public class ReceptionistService : IReceptionistService
 {
     private readonly IReceptionistRepository _receptionistRepository;
-    private readonly IMediator _mediator;
+    private readonly IPublishEndpoint _publishEndpoint;
 
     public ReceptionistService(
         IReceptionistRepository receptionistRepository,
-        IMediator mediator)
+        IPublishEndpoint publishEndpoint)
     {
         _receptionistRepository = receptionistRepository;
-        _mediator = mediator;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task<Result<ReceptionistResponseDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -92,12 +92,22 @@ public class ReceptionistService : IReceptionistService
             return Result<ReceptionistResponseDto>.Failure(result.Error);
         }
 
-        await _mediator.Publish(new ReceptionistCreatedNotification(
-            result.Value.Id,
-            result.Value.AccountId,
-            result.Value.OfficeId,
-            DateTime.UtcNow
-        ), cancellationToken);
+        var integrationEvent = new ReceptionistCreated
+        {
+            Id = result.Value.Id,
+            AccountId = result.Value.AccountId,
+            OfficeId = result.Value.OfficeId,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        await _publishEndpoint.Publish(integrationEvent, cancellationToken);
+
+        var saveResult = await _receptionistRepository.SaveChangesAsync(cancellationToken);
+        
+        if (!saveResult.IsSuccess)
+        {
+            return Result<ReceptionistResponseDto>.Failure(saveResult.Error);
+        }
 
         return Result<ReceptionistResponseDto>.Success(MapToDto(result.Value));
     }
@@ -128,12 +138,22 @@ public class ReceptionistService : IReceptionistService
             return Result<ReceptionistResponseDto>.Failure(updateResult.Error);
         }
 
-        await _mediator.Publish(new ReceptionistUpdatedNotification(
-            receptionist.Id,
-            receptionist.AccountId,
-            receptionist.OfficeId,
-            DateTime.UtcNow
-        ), cancellationToken);
+        var integrationEvent = new ReceptionistUpdated
+        {
+            Id = receptionist.Id,
+            AccountId = receptionist.AccountId,
+            OfficeId = receptionist.OfficeId,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        await _publishEndpoint.Publish(integrationEvent, cancellationToken);
+
+        var saveResult = await _receptionistRepository.SaveChangesAsync(cancellationToken);
+        
+        if (!saveResult.IsSuccess)
+        {
+            return Result<ReceptionistResponseDto>.Failure(saveResult.Error);
+        }
 
         return Result<ReceptionistResponseDto>.Success(MapToDto(receptionist));
     }
@@ -147,10 +167,20 @@ public class ReceptionistService : IReceptionistService
             return deleteResult;
         }
 
-        await _mediator.Publish(new ReceptionistDeletedNotification(
-            id,
-            DateTime.UtcNow
-        ), cancellationToken);
+        var integrationEvent = new ReceptionistDeleted
+        {
+            Id = id,
+            DeletedAt = DateTime.UtcNow
+        };
+
+        await _publishEndpoint.Publish(integrationEvent, cancellationToken);
+
+        var saveResult = await _receptionistRepository.SaveChangesAsync(cancellationToken);
+        
+        if (!saveResult.IsSuccess)
+        {
+            return saveResult;
+        }
 
         return deleteResult;
     }
