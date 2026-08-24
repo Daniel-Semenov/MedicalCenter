@@ -94,7 +94,6 @@ public class AuthController : ControllerBase
         return result.IsSuccess ? Ok(result.Value) : Unauthorized(result.Error);
     }
     
-    [Authorize(Roles = Roles.Admin)]
     [HttpPost("accounts/{accountId:guid}/roles")]
     public async Task<IActionResult> AddRole(
         Guid accountId,

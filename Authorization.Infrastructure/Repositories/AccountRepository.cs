@@ -41,12 +41,12 @@ public class AccountRepository : IAccountRepository
         {
             return Result<Account>.Failure(AccountErrors.EmailNotFound(email));
         }
-            
 
         return Result<Account>.Success(account);
     }
 
-    public async Task<Result<Account>> CreateAsync(Account account, string password, CancellationToken cancellationToken = default)
+    public async Task<Result<Account>> CreateAsync(Account account, string password,
+        CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -73,8 +73,6 @@ public class AccountRepository : IAccountRepository
         }
 
         _context.Users.Update(account);
-        
-        await _context.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }
@@ -95,7 +93,8 @@ public class AccountRepository : IAccountRepository
         return Result<IEnumerable<Account>>.Success(users);
     }
 
-    public async Task<Result<IEnumerable<Account>>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
+    public async Task<Result<IEnumerable<Account>>> GetByIdsAsync(IEnumerable<Guid> ids,
+        CancellationToken cancellationToken = default)
     {
         var idList = ids.ToList();
 
@@ -129,6 +128,12 @@ public class AccountRepository : IAccountRepository
             return Result.Failure(AccountErrors.DeleteFailed(errors));
         }
 
+        return Result.Success();
+    }
+
+    public async Task<Result> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        await _context.SaveChangesAsync(cancellationToken);
         return Result.Success();
     }
 }

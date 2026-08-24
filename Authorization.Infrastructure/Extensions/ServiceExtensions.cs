@@ -1,16 +1,11 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Authorization.Application.Interfaces;
-using Authorization.Application.Notifications;
 using Authorization.Domain.Entities;
 using Authorization.Infrastructure.Auth;
 using Authorization.Infrastructure.Db;
-using Authorization.Infrastructure.Messaging.Publishers;
-using Authorization.Infrastructure.Notifications.Handlers;
 using Authorization.Infrastructure.Repositories;
 using MassTransit;
-using Messaging.Contracts.Constants;
-using Messaging.Contracts.Events.Accounts;
 using Messaging.Contracts.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -32,7 +27,6 @@ public static class ServiceExtensions
             .AddIdentityConfiguration()
             .AddRedis(configuration)
             .AddJwtAuthentication(configuration)
-            .AddMediatR()
             .AddMessaging(configuration);
         
         return services;
@@ -167,66 +161,33 @@ public static class ServiceExtensions
 
         return services;
     }
-  private static IServiceCollection AddMessaging(this IServiceCollection services, IConfiguration configuration)
-{
-    services.Configure<RabbitMqOptions>(options =>
+    private static IServiceCollection AddMessaging(this IServiceCollection services, IConfiguration configuration)
     {
-        configuration.GetSection(RabbitMqOptions.SectionName).Bind(options);
-    });
-
-    services.AddScoped<IEventPublisher, MassTransitEventPublisher>();
-    
-    services.AddMassTransit(busConfigurator =>
-    {
-        busConfigurator.AddEntityFrameworkOutbox<ApplicationDbContext>(outboxConfigurator =>
+        services.Configure<RabbitMqOptions>(options =>
         {
-            outboxConfigurator.UsePostgres();
-            outboxConfigurator.UseBusOutbox();
+            configuration.GetSection(RabbitMqOptions.SectionName).Bind(options);
         });
-        
-        busConfigurator.UsingRabbitMq((context, rabbitConfigurator) =>
+
+        services.AddMassTransit(busConfigurator =>
         {
-            var rabbitMqOptions = context.GetRequiredService<IOptions<RabbitMqOptions>>().Value;
+            busConfigurator.AddEntityFrameworkOutbox<ApplicationDbContext>(outboxConfigurator =>
+            {
+                outboxConfigurator.UsePostgres();
+                outboxConfigurator.UseBusOutbox();
+            });
 
-            ConfigureRabbitMqHost(rabbitConfigurator, rabbitMqOptions);
-            ConfigureMessages(rabbitConfigurator);
+            busConfigurator.UsingRabbitMq((context, rabbitConfigurator) =>
+            {
+                var rabbitMqOptions = context.GetRequiredService<IOptions<RabbitMqOptions>>().Value;
+
+                rabbitConfigurator.Host(rabbitMqOptions.Host, rabbitMqOptions.VirtualHost, hostConfigurator =>
+                {
+                    hostConfigurator.Username(rabbitMqOptions.Username);
+                    hostConfigurator.Password(rabbitMqOptions.Password);
+                });
+            });
         });
-    });
 
-    return services;
-}
-
-private static void ConfigureRabbitMqHost(IRabbitMqBusFactoryConfigurator rabbitConfigurator, RabbitMqOptions options)
-{
-    rabbitConfigurator.Host(options.Host, options.VirtualHost, hostConfigurator =>
-    {
-        hostConfigurator.Username(options.Username);
-        hostConfigurator.Password(options.Password);
-    });
-}
-
-private static void ConfigureMessages(IRabbitMqBusFactoryConfigurator rabbitConfigurator)
-{
-    rabbitConfigurator.Message<AccountCreated>(m =>
-        m.SetEntityName(MessagingEntityNames.AccountCreated));
-
-    rabbitConfigurator.Message<AccountUpdated>(m =>
-        m.SetEntityName(MessagingEntityNames.AccountUpdated));
-
-    rabbitConfigurator.Message<AccountDeactivated>(m =>
-        m.SetEntityName(MessagingEntityNames.AccountDeactivated));
-}
-
-    private static IServiceCollection AddMediatR(this IServiceCollection services)
-    {
-        services.AddMediatR(cfg =>
-        {
-            cfg.RegisterServicesFromAssembly(typeof(AccountCreatedNotification).Assembly);
-    
-            cfg.RegisterServicesFromAssembly(typeof(AccountCreatedNotificationHandler).Assembly);
-        });
-        
         return services;
     }
-
 }

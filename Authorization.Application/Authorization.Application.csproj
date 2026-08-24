@@ -19,6 +19,7 @@
     <ItemGroup>
       <ProjectReference Include="..\Authorization.Domain\Authorization.Domain.csproj" />
       <ProjectReference Include="..\Authorization.Shared\Authorization.Shared.csproj" />
+      <ProjectReference Include="..\..\Messaging.Contracts\Messaging.Contracts\Messaging.Contracts.csproj" />
     </ItemGroup>
 
 </Project>

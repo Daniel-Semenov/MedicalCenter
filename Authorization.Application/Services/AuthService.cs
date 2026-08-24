@@ -1,10 +1,10 @@
 ﻿using Authorization.Application.DTO_s;
 using Authorization.Application.Interfaces;
-using Authorization.Application.Notifications;
 using Authorization.Domain.Entities;
 using Authorization.Shared.Common;
 using Authorization.Shared.Common.Errors;
-using MediatR;
+using MassTransit;
+using Messaging.Contracts.Events.Accounts;
 using Microsoft.AspNetCore.Identity;
 
 namespace Authorization.Application.Services;
@@ -14,16 +14,21 @@ public class AuthService : IAuthService
     private readonly UserManager<Account> _userManager;
     private readonly ITokenService _tokenService;
     private readonly RoleManager<ApplicationRole> _roleManager;
-    private readonly IMediator _mediator;
+    private readonly IPublishEndpoint _publishEndpoint; 
+    private readonly IAccountRepository _accountRepository;
 
-    public AuthService(UserManager<Account> userManager, ITokenService tokenService, RoleManager<ApplicationRole> roleManager, IMediator mediator)
+    public AuthService(
+        UserManager<Account> userManager,
+        ITokenService tokenService,
+        RoleManager<ApplicationRole> roleManager,
+        IPublishEndpoint publishEndpoint, IAccountRepository accountRepository) 
     {
         _userManager = userManager;
         _tokenService = tokenService;
         _roleManager = roleManager;
-        _mediator = mediator;
+        _publishEndpoint = publishEndpoint;
+        _accountRepository = accountRepository;
     }
-
 
     public async Task<Result<AuthResponse>> RegisterAsync(
         RegisterRequest dto,
@@ -37,21 +42,16 @@ public class AuthService : IAuthService
                 AuthErrors.EmailAlreadyExists(dto.Email));
         }
 
-
         var account = new Account
         {
             UserName = dto.Email,
             Email = dto.Email,
-
             FirstName = dto.FirstName,
             LastName = dto.LastName,
-
             CreatedAt = DateTime.UtcNow
         };
 
-
         var result = await _userManager.CreateAsync(account, dto.Password);
-
 
         if (!result.Succeeded)
         {
@@ -59,14 +59,11 @@ public class AuthService : IAuthService
                 ", ",
                 result.Errors.Select(x => x.Description));
 
-
             return Result<AuthResponse>.Failure(
                 AuthErrors.RegistrationFailed(message));
         }
 
-
         var tokens = await _tokenService.GenerateTokensAsync(account, cancellationToken);
-
 
         return Result<AuthResponse>.Success(
             new AuthResponse(
@@ -76,7 +73,6 @@ public class AuthService : IAuthService
                 tokens.RefreshToken,
                 tokens.ExpiresAt));
     }
-
 
     public async Task<Result<AuthResponse>> LoginAsync(
         LoginRequest dto,
@@ -84,16 +80,13 @@ public class AuthService : IAuthService
     {
         var account = await _userManager.FindByEmailAsync(dto.Email);
 
-
         if (account is null)
         {
             return Result<AuthResponse>.Failure(
                 AuthErrors.InvalidCredentials);
         }
 
-
         var passwordValid = await _userManager.CheckPasswordAsync(account, dto.Password);
-
 
         if (!passwordValid)
         {
@@ -101,9 +94,7 @@ public class AuthService : IAuthService
                 AuthErrors.InvalidCredentials);
         }
 
-
         var tokens = await _tokenService.GenerateTokensAsync(account, cancellationToken);
-
 
         return Result<AuthResponse>.Success(
             new AuthResponse(
@@ -113,7 +104,6 @@ public class AuthService : IAuthService
                 tokens.RefreshToken,
                 tokens.ExpiresAt));
     }
-
 
     public async Task<Result> LogoutAsync(
         Guid userId,
@@ -195,22 +185,29 @@ public class AuthService : IAuthService
 
         if (!result.Succeeded)
         {
-            var error = string.Join(
-                ", ",
-                result.Errors.Select(x => x.Description));
-
+            var error = string.Join(", ", result.Errors.Select(x => x.Description));
             return Result.Failure(AuthErrors.RoleAssignmentFailed(error));
         }
-        
-        await _mediator.Publish(new AccountCreatedNotification(
-            account.Id,
-            role,
-            account.FirstName,
-            account.LastName,
-            account.MiddleName,
-            account.IsActive,
-            account.CreatedAt
-        ), cancellationToken);
+
+        var integrationEvent = new AccountCreated
+        {
+            Id = account.Id,
+            Role = role,
+            FirstName = account.FirstName,
+            LastName = account.LastName,
+            MiddleName = account.MiddleName,
+            IsActive = account.IsActive,
+            CreatedAt = account.CreatedAt
+        };
+
+        await _publishEndpoint.Publish(integrationEvent, cancellationToken);
+
+        var saveResult = await _accountRepository.SaveChangesAsync(cancellationToken);
+    
+        if (!saveResult.IsSuccess)
+        {
+            return saveResult;
+        }
 
         return Result.Success();
     }
