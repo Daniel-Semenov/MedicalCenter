@@ -45,30 +45,47 @@ public class OfficeSyncConsumer :
     {
         var message = context.Message;
 
+        _logger.LogInformation("Received OfficeUpdated event: OfficeId={OfficeId}", message.Id);
+
         var existingResult = await _officeSnapshotRepository.GetByIdAsync(message.Id, context.CancellationToken);
+
+        OfficeSnapshot snapshot;
 
         if (!existingResult.IsSuccess || existingResult.Value is null)
         {
-            return;
+            _logger.LogWarning(
+                "OfficeSnapshot not found for OfficeId: {OfficeId} on update, creating new snapshot",
+                message.Id);
+
+            snapshot = new OfficeSnapshot
+            {
+                Id = message.Id,
+                IsActive = true
+            };
+        }
+        else
+        {
+            snapshot = existingResult.Value;
         }
 
-        var snapshot = existingResult.Value;
         snapshot.Address = FormatAddress(message.City, message.Street, message.HouseNumber, message.OfficeNumber);
 
         await _officeSnapshotRepository.UpsertAsync(snapshot, context.CancellationToken);
 
-        _logger.LogInformation("OfficeSnapshot updated for OfficeId: {OfficeId}", message.Id);
+        _logger.LogInformation("OfficeSnapshot upserted for OfficeId: {OfficeId}", message.Id);
     }
 
     public async Task Consume(ConsumeContext<OfficeStatusChanged> context)
     {
         var message = context.Message;
 
+        _logger.LogInformation("Received OfficeStatusChanged event: OfficeId={OfficeId}", message.Id);
+
         var existingResult = await _officeSnapshotRepository.GetByIdAsync(message.Id, context.CancellationToken);
 
         if (!existingResult.IsSuccess || existingResult.Value is null)
         {
-            _logger.LogError($"Office with id: {message.Id} not found");
+            _logger.LogWarning("OfficeSnapshot not found for OfficeId: {OfficeId} on status change", message.Id);
             return;
         }
 
@@ -84,10 +101,15 @@ public class OfficeSyncConsumer :
 
     public async Task Consume(ConsumeContext<OfficeDeleted> context)
     {
-        var existingResult = await _officeSnapshotRepository.GetByIdAsync(context.Message.Id, context.CancellationToken);
+        var message = context.Message;
+
+        _logger.LogInformation("Received OfficeDeleted event: OfficeId={OfficeId}", message.Id);
+
+        var existingResult = await _officeSnapshotRepository.GetByIdAsync(message.Id, context.CancellationToken);
 
         if (!existingResult.IsSuccess || existingResult.Value is null)
         {
+            _logger.LogWarning("OfficeSnapshot not found for OfficeId: {OfficeId} on delete", message.Id);
             return;
         }
 
@@ -96,7 +118,7 @@ public class OfficeSyncConsumer :
 
         await _officeSnapshotRepository.UpsertAsync(snapshot, context.CancellationToken);
 
-        _logger.LogInformation("OfficeSnapshot soft-deactivated for OfficeId: {OfficeId}", context.Message.Id);
+        _logger.LogInformation("OfficeSnapshot soft-deactivated for OfficeId: {OfficeId}", message.Id);
     }
 
     private static string FormatAddress(string city, string street, int houseNumber, int officeNumber) =>

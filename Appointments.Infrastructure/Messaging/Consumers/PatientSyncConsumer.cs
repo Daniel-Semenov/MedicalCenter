@@ -26,80 +26,104 @@ public class PatientSyncConsumer :
     {
         var message = context.Message;
 
-        _logger.LogInformation("Received PatientCreated event: PatientId={PatientId}", message.Id);
+        _logger.LogInformation(
+            "Received PatientCreated event: PatientId={PatientId}",
+            message.Id);
 
         var snapshot = new PatientSnapshot
         {
             Id = message.Id,
             FirstName = message.FirstName,
             LastName = message.LastName,
-            MiddleName = message.MiddleName,        
+            MiddleName = message.MiddleName,
             DateOfBirth = message.DateOfBirth,
             IsActive = true
         };
 
-        await _patientSnapshotRepository.UpsertAsync(snapshot, context.CancellationToken);
+        await _patientSnapshotRepository.UpsertAsync(
+            snapshot,
+            context.CancellationToken);
 
-        _logger.LogInformation("PatientSnapshot created for PatientId: {PatientId}", message.Id);
+        _logger.LogInformation(
+            "PatientSnapshot created for PatientId: {PatientId}",
+            message.Id);
     }
 
     public async Task Consume(ConsumeContext<PatientUpdated> context)
     {
         var message = context.Message;
 
-        var existingResult = await _patientSnapshotRepository.GetByIdAsync(message.Id, context.CancellationToken);
+        _logger.LogInformation(
+            "Received PatientUpdated event: PatientId={PatientId}",
+            message.Id);
+
+        var existingResult = await _patientSnapshotRepository.GetByIdAsync(
+            message.Id,
+            context.CancellationToken);
+
+        PatientSnapshot snapshot;
 
         if (!existingResult.IsSuccess || existingResult.Value is null)
         {
-            return;
-        }
+            _logger.LogWarning(
+                "PatientSnapshot not found for PatientId: {PatientId} on update, creating new snapshot",
+                message.Id);
 
-        var snapshot = existingResult.Value;
+            snapshot = new PatientSnapshot
+            {
+                Id = message.Id,
+                IsActive = true
+            };
+        }
+        else
+        {
+            snapshot = existingResult.Value;
+        }
 
         snapshot.FirstName = message.FirstName;
         snapshot.LastName = message.LastName;
         snapshot.MiddleName = message.MiddleName;
         snapshot.DateOfBirth = message.DateOfBirth;
-        snapshot.IsActive = true;
 
-        await _patientSnapshotRepository.UpsertAsync(snapshot, context.CancellationToken);
+        await _patientSnapshotRepository.UpsertAsync(
+            snapshot,
+            context.CancellationToken);
 
-        _logger.LogInformation("PatientSnapshot updated for PatientId: {PatientId}", message.Id);
+        _logger.LogInformation(
+            "PatientSnapshot upserted for PatientId: {PatientId}",
+            message.Id);
     }
-    
-    
+
     public async Task Consume(ConsumeContext<PatientDeleted> context)
     {
         var message = context.Message;
 
+        _logger.LogInformation(
+            "Received PatientDeleted event: PatientId={PatientId}",
+            message.Id);
+
         var existingResult = await _patientSnapshotRepository.GetByIdAsync(
-            message.Id, 
+            message.Id,
             context.CancellationToken);
 
-        if (!existingResult.IsSuccess)
-        {
-            _logger.LogError(
-                "Failed to get PatientSnapshot for PatientId: {PatientId}. Error: {Error}", 
-                message.Id, 
-                existingResult.Error);
-            return;
-        }
-
-        if (existingResult.Value is null)
+        if (!existingResult.IsSuccess || existingResult.Value is null)
         {
             _logger.LogWarning(
-                "PatientSnapshot not found for PatientId: {PatientId}", 
+                "PatientSnapshot not found for PatientId: {PatientId} on delete",
                 message.Id);
+
             return;
         }
 
         var snapshot = existingResult.Value;
-        snapshot.IsActive = false;  
+        snapshot.IsActive = false;
 
-        await _patientSnapshotRepository.UpsertAsync(snapshot, context.CancellationToken);
+        await _patientSnapshotRepository.UpsertAsync(
+            snapshot,
+            context.CancellationToken);
 
         _logger.LogInformation(
-            "PatientSnapshot marked as not active for PatientId: {PatientId}", 
+            "PatientSnapshot soft-deactivated for PatientId: {PatientId}",
             message.Id);
     }
 }
