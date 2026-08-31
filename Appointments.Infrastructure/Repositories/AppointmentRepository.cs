@@ -283,8 +283,14 @@ public class AppointmentRepository : IAppointmentRepository
 
     public async Task<Result> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        await _context.SaveChangesAsync(cancellationToken);
-
-        return Result.Success();
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            return Result.Success();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Result.Failure(AppointmentErrors.ConcurrencyConflict());
+        }
     }
 }

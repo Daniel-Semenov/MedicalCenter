@@ -2,6 +2,5 @@
 
 public class RescheduleAppointmentRequestDto
 {
-    public DateTime NewAppointmentDate { get; set; }
-    public DateTime NewStartTime { get; set; }
+    public Guid NewTimeSlotId { get; set; }
 }

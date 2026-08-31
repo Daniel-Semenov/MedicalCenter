@@ -19,7 +19,8 @@ public class AppointmentsDbContext : DbContext
     public DbSet<SpecializationSnapshot> SpecializationSnapshots { get; set; } = null!;
     public DbSet<ServiceSnapshot> ServiceSnapshots { get; set; } = null!;
     public DbSet<OfficeSnapshot> OfficeSnapshots { get; set; } = null!;
-
+    public DbSet<DoctorScheduleSnapshot> DoctorScheduleSnapshots { get; set; } = null!;
+    public DbSet<TimeSlot> TimeSlots { get; set; } = null!;
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

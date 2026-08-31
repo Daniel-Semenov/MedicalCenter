@@ -1,7 +1,6 @@
 ﻿using Appointments.Application.Interfaces;
 using Appointments.Domain.Entities;
 using Appointments.Domain.Entities.Snapshots;
-using Appointments.Shared.Common.Constants;
 using Appointments.Shared.Common.Errors;
 using Appointments.Shared.Common.Results;
 using MediatR;
@@ -11,34 +10,33 @@ namespace Appointments.Application.Commands.Appointments;
 public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointmentCommand, Result<Guid>>
 {
     private readonly IAppointmentRepository _appointmentRepository;
+    private readonly ITimeSlotRepository _timeSlotRepository;
     private readonly ISnapshotRepository<ServiceSnapshot> _serviceSnapshotRepository;
 
     public CreateAppointmentCommandHandler(
         IAppointmentRepository appointmentRepository,
+        ITimeSlotRepository timeSlotRepository,
         ISnapshotRepository<ServiceSnapshot> serviceSnapshotRepository)
     {
         _appointmentRepository = appointmentRepository;
+        _timeSlotRepository = timeSlotRepository;
         _serviceSnapshotRepository = serviceSnapshotRepository;
     }
 
     public async Task<Result<Guid>> Handle(CreateAppointmentCommand request, CancellationToken cancellationToken)
     {
-        var slotTakenResult = await _appointmentRepository.IsSlotTakenAsync(
-            request.DoctorId,
-            request.AppointmentDate,
-            request.StartTime,
-            excludeAppointmentId: null,
-            cancellationToken);
+        var slotResult = await _timeSlotRepository.GetByIdAsync(request.TimeSlotId, cancellationToken);
 
-        if (!slotTakenResult.IsSuccess)
+        if (!slotResult.IsSuccess)
         {
-            return Result<Guid>.Failure(slotTakenResult.Error);
+            return Result<Guid>.Failure(slotResult.Error);
         }
 
-        if (slotTakenResult.Value)
+        var slot = slotResult.Value;
+
+        if (slot.Status != TimeSlotStatus.Available)
         {
-            return Result<Guid>.Failure(
-                AppointmentErrors.SlotAlreadyTaken(request.DoctorId, request.AppointmentDate, request.StartTime));
+            return Result<Guid>.Failure(TimeSlotErrors.NotAvailable(slot.DoctorId, slot.StartTime));
         }
 
         var serviceSnapshotResult = await _serviceSnapshotRepository.GetByIdAsync(request.ServiceId, cancellationToken);
@@ -50,13 +48,13 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
         {
             Id = Guid.NewGuid(),
             PatientId = request.PatientId,
-            DoctorId = request.DoctorId,
+            DoctorId = slot.DoctorId,
             ServiceId = request.ServiceId,
             SpecializationId = specializationId,
-            OfficeId = request.OfficeId,
-            AppointmentDate = request.AppointmentDate,
-            StartTime = request.StartTime,
-            EndTime = request.StartTime.AddMinutes(AppointmentConstants.SlotDurationMinutes),
+            OfficeId = slot.OfficeId,
+            AppointmentDate = slot.StartTime.Date,
+            StartTime = slot.StartTime,
+            EndTime = slot.EndTime,
             Status = AppointmentStatus.Scheduled,
             CreatedAt = DateTime.UtcNow
         };
@@ -66,6 +64,16 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
         if (!addResult.IsSuccess)
         {
             return Result<Guid>.Failure(addResult.Error);
+        }
+
+        slot.Status = TimeSlotStatus.Booked;
+        slot.AppointmentId = appointment.Id;
+
+        var updateSlotResult = await _timeSlotRepository.UpdateAsync(slot, cancellationToken);
+
+        if (!updateSlotResult.IsSuccess)
+        {
+            return Result<Guid>.Failure(updateSlotResult.Error);
         }
 
         var saveResult = await _appointmentRepository.SaveChangesAsync(cancellationToken);

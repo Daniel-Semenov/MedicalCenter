@@ -116,6 +116,31 @@ namespace Appointments.Infrastructure.Migrations
                     b.ToTable("AppointmentResults", (string)null);
                 });
 
+            modelBuilder.Entity("Appointments.Domain.Entities.Snapshots.DoctorScheduleSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("DayOfWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<TimeSpan>("EndTime")
+                        .HasColumnType("interval");
+
+                    b.Property<TimeSpan>("StartTime")
+                        .HasColumnType("interval");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorId");
+
+                    b.ToTable("DoctorScheduleSnapshots", (string)null);
+                });
+
             modelBuilder.Entity("Appointments.Domain.Entities.Snapshots.DoctorSnapshot", b =>
                 {
                     b.Property<Guid>("Id")
@@ -245,6 +270,46 @@ namespace Appointments.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("SpecializationSnapshots", (string)null);
+                });
+
+            modelBuilder.Entity("Appointments.Domain.Entities.TimeSlot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AppointmentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("EndTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OfficeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bytea");
+
+                    b.Property<DateTime>("StartTime")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId");
+
+                    b.HasIndex("DoctorId", "StartTime")
+                        .IsUnique();
+
+                    b.ToTable("TimeSlots", (string)null);
                 });
 #pragma warning restore 612, 618
         }

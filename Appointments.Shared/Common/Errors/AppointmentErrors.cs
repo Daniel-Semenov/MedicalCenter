@@ -21,4 +21,10 @@ public static class AppointmentErrors
             "APPOINTMENT_INVALID_STATUS_TRANSITION",
             $"Appointment {id} cannot be modified because its current status is {currentStatus}.",
             StatusCodes.Status409Conflict);
+    
+    public static Error ConcurrencyConflict() =>
+        new(
+            "APPOINTMENT_CONCURRENCY_CONFLICT",
+            "The selected time slot was booked by someone else. Please choose another slot.",
+            StatusCodes.Status409Conflict);
 }

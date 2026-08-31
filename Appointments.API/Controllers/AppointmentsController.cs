@@ -4,6 +4,7 @@ using Appointments.API.Extensions;
 using Appointments.Application.Commands.Appointments;
 using Appointments.Application.DTO_s.Request.Appointment;
 using Appointments.Application.Queries.Appointments;
+using Appointments.Application.Queries.TimeSlots;
 using Appointments.Shared.Common.Constants;
 
 namespace Appointments.API.Controllers;
@@ -59,11 +60,8 @@ public class AppointmentsController : ControllerBase
         var command = new CreateAppointmentCommand
         {
             PatientId = request.PatientId,
-            DoctorId = request.DoctorId,
             ServiceId = request.ServiceId,
-            OfficeId = request.OfficeId,
-            AppointmentDate = request.AppointmentDate,
-            StartTime = request.StartTime
+            TimeSlotId = request.TimeSlotId
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -85,8 +83,7 @@ public class AppointmentsController : ControllerBase
         var command = new RescheduleAppointmentCommand
         {
             Id = id,
-            NewAppointmentDate = request.NewAppointmentDate,
-            NewStartTime = request.NewStartTime
+            NewTimeSlotId = request.NewTimeSlotId
         };
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -94,10 +91,24 @@ public class AppointmentsController : ControllerBase
         return result.ToActionResult();
     }
 
-    [HttpPut("{id:guid}/cancel")]
-    public async Task<IActionResult> Cancel(Guid id, CancellationToken cancellationToken)
+    [HttpGet("doctors/{doctorId:guid}/available-slots")]
+    public async Task<IActionResult> GetAvailableSlots(
+        Guid doctorId,
+        [FromQuery] DateTime from,
+        [FromQuery] DateTime to,
+        CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new CancelAppointmentCommand { Id = id }, cancellationToken);
+        from = DateTime.SpecifyKind(from, DateTimeKind.Utc);
+        to = DateTime.SpecifyKind(to, DateTimeKind.Utc);
+
+        var query = new GetAvailableTimeSlotsQuery
+        {
+            DoctorId = doctorId,
+            FromDate = from,
+            ToDate = to
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
 
         return result.ToActionResult();
     }

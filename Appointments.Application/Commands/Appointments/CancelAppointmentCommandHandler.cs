@@ -9,10 +9,14 @@ namespace Appointments.Application.Commands.Appointments;
 public class CancelAppointmentCommandHandler : IRequestHandler<CancelAppointmentCommand, Result>
 {
     private readonly IAppointmentRepository _appointmentRepository;
+    private readonly ITimeSlotRepository _timeSlotRepository;
 
-    public CancelAppointmentCommandHandler(IAppointmentRepository appointmentRepository)
+    public CancelAppointmentCommandHandler(
+        IAppointmentRepository appointmentRepository,
+        ITimeSlotRepository timeSlotRepository)
     {
         _appointmentRepository = appointmentRepository;
+        _timeSlotRepository = timeSlotRepository;
     }
 
     public async Task<Result> Handle(CancelAppointmentCommand request, CancellationToken cancellationToken)
@@ -40,6 +44,22 @@ public class CancelAppointmentCommandHandler : IRequestHandler<CancelAppointment
         if (!updateResult.IsSuccess)
         {
             return Result.Failure(updateResult.Error);
+        }
+
+        var slotResult = await _timeSlotRepository.GetByAppointmentIdAsync(appointment.Id, cancellationToken);
+
+        if (slotResult.IsSuccess)
+        {
+            var slot = slotResult.Value;
+            slot.Status = TimeSlotStatus.Available;
+            slot.AppointmentId = null;
+
+            var freeSlotResult = await _timeSlotRepository.UpdateAsync(slot, cancellationToken);
+
+            if (!freeSlotResult.IsSuccess)
+            {
+                return Result.Failure(freeSlotResult.Error);
+            }
         }
 
         return await _appointmentRepository.SaveChangesAsync(cancellationToken);
