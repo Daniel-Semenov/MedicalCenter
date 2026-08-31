@@ -258,6 +258,31 @@ namespace Profiles.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Profiles.Domain.Entities.DoctorSchedule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("DayOfWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<TimeSpan>("EndTime")
+                        .HasColumnType("interval");
+
+                    b.Property<TimeSpan>("StartTime")
+                        .HasColumnType("interval");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorId");
+
+                    b.ToTable("DoctorSchedules", (string)null);
+                });
+
             modelBuilder.Entity("Profiles.Domain.Entities.DoctorService", b =>
                 {
                     b.Property<Guid>("Id")
@@ -388,6 +413,15 @@ namespace Profiles.Infrastructure.Migrations
                     b.HasIndex("OfficeId");
 
                     b.ToTable("Receptionists", (string)null);
+                });
+
+            modelBuilder.Entity("Profiles.Domain.Entities.DoctorSchedule", b =>
+                {
+                    b.HasOne("Profiles.Domain.Entities.Doctor", null)
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Profiles.Domain.Entities.DoctorService", b =>

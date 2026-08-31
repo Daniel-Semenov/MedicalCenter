@@ -39,6 +39,7 @@ public static class ServiceExtensions
         services.AddScoped<IDoctorRepository, DoctorRepository>();
         services.AddScoped<IPatientRepository, PatientRepository>();
         services.AddScoped<IReceptionistRepository, ReceptionistRepository>();
+        services.AddScoped<IDoctorScheduleRepository, DoctorScheduleRepository>();
 
         return services;
     }

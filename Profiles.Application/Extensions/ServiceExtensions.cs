@@ -25,6 +25,7 @@ public static class ServiceExtensions
         services.AddScoped<IDoctorService, DoctorService>();
         services.AddScoped<IReceptionistService, ReceptionistService>();
         services.AddScoped<IPatientService, PatientService>();
+        services.AddScoped<IDoctorScheduleService, DoctorScheduleService>();
 
         return services;
     }
