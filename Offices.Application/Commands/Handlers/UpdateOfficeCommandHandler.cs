@@ -1,7 +1,8 @@
-﻿using MediatR;
+﻿using MassTransit;
+using MediatR;
+using Messaging.Contracts.Events.Offices;
 using Offices.Application.DTO_s;
 using Offices.Application.Interfaces;
-using Offices.Application.Notifications;
 using Offices.Domain.Exceptions;
 
 namespace Offices.Application.Commands.Handlers;
@@ -9,12 +10,17 @@ namespace Offices.Application.Commands.Handlers;
 public class UpdateOfficeCommandHandler : IRequestHandler<UpdateOfficeCommand, OfficeResponse>
 {
     private readonly IOfficeRepository _officeRepository;
-    private readonly IPublisher _publisher;
+    private readonly IPublishEndpoint _publishEndpoint;
+    private readonly IOutboxUnitOfWork _outboxUnitOfWork;
 
-    public UpdateOfficeCommandHandler(IOfficeRepository officeRepository, IPublisher publisher)
+    public UpdateOfficeCommandHandler(
+        IOfficeRepository officeRepository,
+        IPublishEndpoint publishEndpoint,
+        IOutboxUnitOfWork outboxUnitOfWork)
     {
         _officeRepository = officeRepository;
-        _publisher = publisher;
+        _publishEndpoint = publishEndpoint;
+        _outboxUnitOfWork = outboxUnitOfWork;
     }
 
     public async Task<OfficeResponse> Handle(UpdateOfficeCommand request, CancellationToken cancellationToken)
@@ -35,15 +41,19 @@ public class UpdateOfficeCommandHandler : IRequestHandler<UpdateOfficeCommand, O
 
         await _officeRepository.UpdateAsync(office, cancellationToken);
 
-        await _publisher.Publish(new OfficeUpdatedNotification(
-            office.Id,
-            office.City,
-            office.Street,
-            office.HouseNumber,
-            office.OfficeNumber,
-            office.PhoneNumber,
-            DateTime.UtcNow
-        ), cancellationToken);
+        var integrationEvent = new OfficeUpdated
+        {
+            Id = office.Id,
+            City = office.City,
+            Street = office.Street,
+            HouseNumber = office.HouseNumber,
+            OfficeNumber = office.OfficeNumber,
+            PhoneNumber = office.PhoneNumber,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        await _publishEndpoint.Publish(integrationEvent, cancellationToken);
+        await _outboxUnitOfWork.SaveChangesAsync(cancellationToken);
 
         return new OfficeResponse
         {

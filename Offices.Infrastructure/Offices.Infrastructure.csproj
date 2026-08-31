@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -7,15 +6,18 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="MassTransit" Version="8.2.3" />
-      <PackageReference Include="MassTransit.RabbitMQ" Version="8.2.3" />
-      <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.17" />
-      <PackageReference Include="MongoDB.Driver" Version="3.10.0" />
+        <PackageReference Include="MassTransit" Version="8.2.3" />
+        <PackageReference Include="MassTransit.RabbitMQ" Version="8.2.3" />
+        <PackageReference Include="MassTransit.EntityFrameworkCore" Version="8.2.3" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.8" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.2" />
+        <PackageReference Include="MongoDB.Driver" Version="3.10.0" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Offices.Application\Offices.Application.csproj" />
+        <ProjectReference Include="..\Offices.Application\Offices.Application.csproj" />
         <ProjectReference Include="..\..\Messaging.Contracts\Messaging.Contracts\Messaging.Contracts.csproj" />
     </ItemGroup>
-
 </Project>

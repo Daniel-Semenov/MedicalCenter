@@ -1,6 +1,7 @@
-﻿using MediatR;
+﻿using MassTransit;
+using MediatR;
+using Messaging.Contracts.Events.Offices;
 using Offices.Application.Interfaces;
-using Offices.Application.Notifications;
 using Offices.Domain.Exceptions;
 
 namespace Offices.Application.Commands.Handlers;
@@ -8,12 +9,17 @@ namespace Offices.Application.Commands.Handlers;
 public class ToggleOfficeStatusCommandHandler : IRequestHandler<ToggleOfficeStatusCommand>
 {
     private readonly IOfficeRepository _officeRepository;
-    private readonly IPublisher _publisher;
+    private readonly IPublishEndpoint _publishEndpoint;
+    private readonly IOutboxUnitOfWork _outboxUnitOfWork;
 
-    public ToggleOfficeStatusCommandHandler(IOfficeRepository officeRepository, IPublisher publisher)
+    public ToggleOfficeStatusCommandHandler(
+        IOfficeRepository officeRepository,
+        IPublishEndpoint publishEndpoint,
+        IOutboxUnitOfWork outboxUnitOfWork)
     {
         _officeRepository = officeRepository;
-        _publisher = publisher;
+        _publishEndpoint = publishEndpoint;
+        _outboxUnitOfWork = outboxUnitOfWork;
     }
 
     public async Task Handle(ToggleOfficeStatusCommand request, CancellationToken cancellationToken)
@@ -29,10 +35,15 @@ public class ToggleOfficeStatusCommandHandler : IRequestHandler<ToggleOfficeStat
 
         await _officeRepository.UpdateAsync(office, cancellationToken);
 
-        await _publisher.Publish(new OfficeStatusChangedNotification(
-            office.Id,
-            office.IsActive,
-            DateTime.UtcNow
-        ), cancellationToken);
+        var integrationEvent = new OfficeStatusChanged
+        {
+            Id = office.Id,
+            IsActive = office.IsActive,
+            ChangedAt = DateTime.UtcNow
+        };
+
+        await _publishEndpoint.Publish(integrationEvent, cancellationToken);
+        
+        await _outboxUnitOfWork.SaveChangesAsync(cancellationToken);
     }
 }
