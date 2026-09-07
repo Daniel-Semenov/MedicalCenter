@@ -33,6 +33,7 @@ public class DoctorScheduleSnapshotRepository : IDoctorScheduleSnapshotRepositor
             .ToListAsync(cancellationToken);
 
         _context.DoctorScheduleSnapshots.RemoveRange(existing);
+        
         await _context.DoctorScheduleSnapshots.AddRangeAsync(entries, cancellationToken);
 
         await _context.SaveChangesAsync(cancellationToken);
