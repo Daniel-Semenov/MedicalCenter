@@ -1,4 +1,5 @@
-﻿using MongoDB.Bson.Serialization;
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 using Offices.Domain.Entities;
 
@@ -15,38 +16,22 @@ public static class OfficeConfiguration
         {
             cm.AutoMap();
             cm.SetIgnoreExtraElements(true);
-            
+
             cm.MapMember(o => o.Id)
                 .SetElementName("_id")
-                .SetSerializer(new GuidSerializer(MongoDB.Bson.BsonType.String));
-            
-            cm.MapMember(o => o.City)
-                .SetElementName("city")
-                .SetIsRequired(true);
-            
-            cm.MapMember(o => o.Street)
-                .SetElementName("street")
-                .SetIsRequired(true);
-            
-            cm.MapMember(o => o.HouseNumber)
-                .SetElementName("houseNumber")
-                .SetIsRequired(true);
-            
-            cm.MapMember(o => o.OfficeNumber)
-                .SetElementName("officeNumber")
-                .SetIsRequired(true);
-            
-            cm.MapMember(o => o.PhoneNumber)
-                .SetElementName("phoneNumber")
-                .SetIsRequired(true);
-            
-            cm.MapMember(o => o.IsActive)
-                .SetElementName("isActive")
-                .SetIsRequired(true);
-            
-            cm.MapMember(o => o.PhotoUrl)
-                .SetElementName("photoUrl")
-                .SetIsRequired(false);
+                .SetSerializer(new GuidSerializer(BsonType.String));
+
+            cm.MapMember(o => o.City).SetElementName("city").SetIsRequired(true);
+            cm.MapMember(o => o.Street).SetElementName("street").SetIsRequired(true);
+            cm.MapMember(o => o.HouseNumber).SetElementName("houseNumber").SetIsRequired(true);
+            cm.MapMember(o => o.OfficeNumber).SetElementName("officeNumber").SetIsRequired(true);
+            cm.MapMember(o => o.PhoneNumber).SetElementName("phoneNumber").SetIsRequired(true);
+            cm.MapMember(o => o.IsActive).SetElementName("isActive").SetIsRequired(true);
+
+            cm.MapMember(o => o.PhotoDocumentId)
+                .SetElementName("photoDocumentId")
+                .SetIsRequired(false)
+                .SetSerializer(new NullableSerializer<Guid>(new GuidSerializer(BsonType.String)));
         });
     }
 }

@@ -9,9 +9,9 @@ public class Office
     public int OfficeNumber { get; private set; }
     public string PhoneNumber { get; private set; }
     public bool IsActive { get; private set; }
-    public string? PhotoUrl { get; private set; }
+    public Guid? PhotoDocumentId { get; private set; }
 
-    private Office() { } 
+    private Office() { }
 
     public Office(
         string city,
@@ -27,7 +27,7 @@ public class Office
         OfficeNumber = officeNumber;
         PhoneNumber = phoneNumber;
         IsActive = true;
-        PhotoUrl = null;
+        PhotoDocumentId = null;
     }
 
     public void UpdateDetails(
@@ -44,28 +44,17 @@ public class Office
         PhoneNumber = phoneNumber;
     }
 
-    public void UpdatePhoto(string photoUrl)
+    public void UpdatePhoto(Guid photoDocumentId)
     {
-        PhotoUrl = photoUrl;
+        PhotoDocumentId = photoDocumentId;
     }
 
     public void RemovePhoto()
     {
-        PhotoUrl = null;
+        PhotoDocumentId = null;
     }
 
-    public void Activate()
-    {
-        IsActive = true;
-    }
-
-    public void Deactivate()
-    {
-        IsActive = false;
-    }
-
-    public void ToggleStatus()
-    {
-        IsActive = !IsActive;
-    }
+    public void Activate() => IsActive = true;
+    public void Deactivate() => IsActive = false;
+    public void ToggleStatus() => IsActive = !IsActive;
 }

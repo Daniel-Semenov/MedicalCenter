@@ -6,9 +6,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Offices.Application.Commands;
 using Offices.Application.Interfaces;
+using Offices.Application.Mapping;
+using Offices.Infrastructure.Clients;
+using Offices.Infrastructure.Clients.Options;
 using Offices.Infrastructure.Db;
 using Offices.Infrastructure.Repositories;
-using Offices.Infrastructure.Services;
 
 namespace Offices.Infrastructure.Extensions;
 
@@ -24,11 +26,11 @@ public static class ServiceExtensions
         var databaseName = configuration["MongoDb:DatabaseName"] ?? "OfficesDb";
 
         services.AddSingleton(sp => new MongoDbContext(connectionString, databaseName));
-
         services.AddScoped<IOfficeRepository, OfficeRepository>();
-        services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
         services.AddOutboxDatabase(configuration);
+        services.AddDocumentsClient(configuration);
+        services.AddScoped<IOfficeResponseFactory, OfficeResponseFactory>();
         services.AddMediatR();
         services.AddMessaging(configuration);
 
@@ -41,6 +43,22 @@ public static class ServiceExtensions
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
         services.AddScoped<IOutboxUnitOfWork, OutboxUnitOfWork>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddDocumentsClient(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<DocumentsClientOptions>(configuration.GetSection(DocumentsClientOptions.SectionName));
+
+        services.AddHttpClient("documents", (sp, client) =>
+        {
+            var options = sp.GetRequiredService<IOptions<DocumentsClientOptions>>().Value;
+            client.BaseAddress = new Uri(options.BaseUrl);
+        });
+
+        services.AddScoped<IDocumentsClient, DocumentsClient>();
+        services.AddHttpClient();
 
         return services;
     }
