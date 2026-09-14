@@ -12,15 +12,18 @@ public class CreateOfficeCommandHandler : IRequestHandler<CreateOfficeCommand, O
     private readonly IOfficeRepository _officeRepository;
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly IOutboxUnitOfWork _outboxUnitOfWork;
+    private readonly IOfficeResponseFactory _officeResponseFactory;
 
     public CreateOfficeCommandHandler(
         IOfficeRepository officeRepository,
         IPublishEndpoint publishEndpoint,
-        IOutboxUnitOfWork outboxUnitOfWork)
+        IOutboxUnitOfWork outboxUnitOfWork, 
+        IOfficeResponseFactory officeResponseFactory)
     {
         _officeRepository = officeRepository;
         _publishEndpoint = publishEndpoint;
         _outboxUnitOfWork = outboxUnitOfWork;
+        _officeResponseFactory = officeResponseFactory;
     }
 
     public async Task<OfficeResponse> Handle(CreateOfficeCommand request, CancellationToken cancellationToken)
@@ -50,13 +53,6 @@ public class CreateOfficeCommandHandler : IRequestHandler<CreateOfficeCommand, O
         
         await _outboxUnitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new OfficeResponse
-        {
-            Id = office.Id,
-            FullAddress = $"{office.City}, {office.Street} {office.HouseNumber}/{office.OfficeNumber}",
-            IsActive = office.IsActive,
-            PhoneNumber = office.PhoneNumber,
-            PhotoUrl = office.PhotoUrl
-        };
+        return await _officeResponseFactory.CreateAsync(office, cancellationToken);
     }
 }

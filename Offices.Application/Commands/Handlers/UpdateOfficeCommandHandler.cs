@@ -12,15 +12,18 @@ public class UpdateOfficeCommandHandler : IRequestHandler<UpdateOfficeCommand, O
     private readonly IOfficeRepository _officeRepository;
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly IOutboxUnitOfWork _outboxUnitOfWork;
+    private readonly IOfficeResponseFactory _officeResponseFactory;
 
     public UpdateOfficeCommandHandler(
         IOfficeRepository officeRepository,
         IPublishEndpoint publishEndpoint,
-        IOutboxUnitOfWork outboxUnitOfWork)
+        IOutboxUnitOfWork outboxUnitOfWork, 
+        IOfficeResponseFactory officeResponseFactory)
     {
         _officeRepository = officeRepository;
         _publishEndpoint = publishEndpoint;
         _outboxUnitOfWork = outboxUnitOfWork;
+        _officeResponseFactory = officeResponseFactory;
     }
 
     public async Task<OfficeResponse> Handle(UpdateOfficeCommand request, CancellationToken cancellationToken)
@@ -54,14 +57,6 @@ public class UpdateOfficeCommandHandler : IRequestHandler<UpdateOfficeCommand, O
 
         await _publishEndpoint.Publish(integrationEvent, cancellationToken);
         await _outboxUnitOfWork.SaveChangesAsync(cancellationToken);
-
-        return new OfficeResponse
-        {
-            Id = office.Id,
-            FullAddress = $"{office.City}, {office.Street} {office.HouseNumber}/{office.OfficeNumber}",
-            IsActive = office.IsActive,
-            PhoneNumber = office.PhoneNumber,
-            PhotoUrl = office.PhotoUrl
-        };
+        return await _officeResponseFactory.CreateAsync(office, cancellationToken);
     }
 }
