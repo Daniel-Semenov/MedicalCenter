@@ -2,6 +2,11 @@
 
 public interface IObjectStorage
 {
+    Task<string> GetPresignedUrlAsync(
+        string bucket,
+        string objectKey,
+        TimeSpan expiry,
+        CancellationToken cancellationToken = default);
     Task UploadAsync(
         string bucket,
         string objectKey,

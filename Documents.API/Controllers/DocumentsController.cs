@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Documents.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/documents")]
 public class DocumentsController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -17,6 +17,17 @@ public class DocumentsController : ControllerBase
     public DocumentsController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+    
+    [HttpPost("presigned-urls")]
+    [ProducesResponseType(typeof(Result<IReadOnlyList<PresignedUrlResponse>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<Result<IReadOnlyList<PresignedUrlResponse>>>> GetPresignedUrls(
+        [FromBody] GetPresignedUrlsRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetPresignedUrlsQuery(request.DocumentIds), cancellationToken);
+
+        return Ok(result);
     }
 
     [HttpPost("upload")]

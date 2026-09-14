@@ -13,6 +13,19 @@ public sealed class MinioObjectStorage : IObjectStorage
         _minioClient = minioClient;
     }
 
+    public Task<string> GetPresignedUrlAsync(
+        string bucket,
+        string objectKey,
+        TimeSpan expiry,
+        CancellationToken cancellationToken = default)
+    {
+        var args = new PresignedGetObjectArgs()
+            .WithBucket(bucket)
+            .WithObject(objectKey)
+            .WithExpiry((int)expiry.TotalSeconds);
+
+        return _minioClient.PresignedGetObjectAsync(args);
+    }
     public async Task UploadAsync(
         string bucket,
         string objectKey,

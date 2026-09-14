@@ -14,6 +14,22 @@ public sealed class DocumentRepository : IDocumentRepository
         _context = context;
     }
 
+    public async Task<IReadOnlyList<Document>> GetByIdsAsync(
+        IEnumerable<Guid> ids,
+        CancellationToken cancellationToken = default)
+    {
+        var idList = ids.ToList();
+
+        if (idList.Count == 0)
+        {
+            return Array.Empty<Document>();
+        }
+
+        return await _context.Documents
+            .Where(d => idList.Contains(d.Id) && !d.IsDeleted)
+            .ToListAsync(cancellationToken);
+    }
+
     public Task<Document?> GetByIdAsync(
         Guid id,
         CancellationToken cancellationToken = default)
