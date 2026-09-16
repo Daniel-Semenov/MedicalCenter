@@ -2,6 +2,7 @@
 using Appointments.Application.DTO_s;
 using Appointments.Application.Generators;
 using Appointments.Application.Interfaces;
+using Appointments.Application.Services;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,6 +21,7 @@ public static class ServiceExtensions
         });
 
         services.AddTransient<IPdfResultGenerator, PdfResultGenerator>();
+        services.AddScoped<IAppointmentResultDtoBuilder, AppointmentResultDtoBuilder>();
         
         services.AddValidatorsFromAssembly(typeof(ServiceExtensions).Assembly);
 

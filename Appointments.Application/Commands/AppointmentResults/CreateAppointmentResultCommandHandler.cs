@@ -3,6 +3,7 @@ using Appointments.Domain.Entities;
 using Appointments.Shared.Common.Errors;
 using Appointments.Shared.Common.Results;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace Appointments.Application.Commands.AppointmentResults;
 
@@ -10,13 +11,25 @@ public class CreateAppointmentResultCommandHandler : IRequestHandler<CreateAppoi
 {
     private readonly IAppointmentRepository _appointmentRepository;
     private readonly IAppointmentResultRepository _appointmentResultRepository;
+    private readonly IAppointmentResultDtoBuilder _dtoBuilder;
+    private readonly IPdfResultGenerator _pdfResultGenerator;
+    private readonly IDocumentsClient _documentsClient;
+    private readonly ILogger<CreateAppointmentResultCommandHandler> _logger;
 
     public CreateAppointmentResultCommandHandler(
         IAppointmentRepository appointmentRepository,
-        IAppointmentResultRepository appointmentResultRepository)
+        IAppointmentResultRepository appointmentResultRepository,
+        IAppointmentResultDtoBuilder dtoBuilder,
+        IPdfResultGenerator pdfResultGenerator,
+        IDocumentsClient documentsClient,
+        ILogger<CreateAppointmentResultCommandHandler> logger)
     {
         _appointmentRepository = appointmentRepository;
         _appointmentResultRepository = appointmentResultRepository;
+        _dtoBuilder = dtoBuilder;
+        _pdfResultGenerator = pdfResultGenerator;
+        _documentsClient = documentsClient;
+        _logger = logger;
     }
 
     public async Task<Result<Guid>> Handle(CreateAppointmentResultCommand request, CancellationToken cancellationToken)
@@ -35,7 +48,7 @@ public class CreateAppointmentResultCommandHandler : IRequestHandler<CreateAppoi
             return Result<Guid>.Failure(AppointmentResultErrors.AlreadyExists(request.AppointmentId));
         }
 
-        var appointmentResultEntity = new Domain.Entities.AppointmentResult
+        var appointmentResultEntity = new AppointmentResult
         {
             Id = Guid.NewGuid(),
             AppointmentId = request.AppointmentId,
@@ -63,10 +76,51 @@ public class CreateAppointmentResultCommandHandler : IRequestHandler<CreateAppoi
             return Result<Guid>.Failure(updateAppointmentResult.Error);
         }
 
-        var saveResult = await _appointmentResultRepository.SaveChangesAsync(cancellationToken);
+        var dtoResult = await _dtoBuilder.BuildAsync(appointmentResultEntity, cancellationToken);
 
-        return saveResult.IsSuccess
-            ? Result<Guid>.Success(appointmentResultEntity.Id)
-            : Result<Guid>.Failure(saveResult.Error);
+        if (!dtoResult.IsSuccess)
+        {
+            return Result<Guid>.Failure(dtoResult.Error);
+        }
+
+        var pdfBytes = _pdfResultGenerator.Generate(dtoResult.Value);
+        var fileName = $"appointment-result-{appointmentResultEntity.Id}.pdf";
+
+        var pdfDocumentId = await _documentsClient.UploadAppointmentResultPdfAsync(
+            appointmentResultEntity.Id, pdfBytes, fileName, cancellationToken);
+
+        try
+        {
+            appointmentResultEntity.PdfDocumentId = pdfDocumentId;
+
+            var saveResult = await _appointmentResultRepository.SaveChangesAsync(cancellationToken);
+
+            if (!saveResult.IsSuccess)
+            {
+                await TryDeleteOrphanedPdfAsync(pdfDocumentId, appointmentResultEntity.Id);
+                return Result<Guid>.Failure(saveResult.Error);
+            }
+
+            return Result<Guid>.Success(appointmentResultEntity.Id);
+        }
+        catch
+        {
+            await TryDeleteOrphanedPdfAsync(pdfDocumentId, appointmentResultEntity.Id);
+            throw;
+        }
+    }
+
+    private async Task TryDeleteOrphanedPdfAsync(Guid pdfDocumentId, Guid appointmentResultId)
+    {
+        try
+        {
+            await _documentsClient.DeleteAsync(pdfDocumentId, CancellationToken.None);
+        }
+        catch (Exception cleanupEx)
+        {
+            _logger.LogWarning(cleanupEx,
+                "Failed to clean up orphaned PDF document {DocumentId} for appointment result {AppointmentResultId} after a failed save.",
+                pdfDocumentId, appointmentResultId);
+        }
     }
 }

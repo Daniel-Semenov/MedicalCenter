@@ -1,6 +1,7 @@
 ﻿using Appointments.Application.Interfaces;
 using Appointments.Application.Options;
 using Appointments.Domain.Entities.Snapshots;
+using Appointments.Infrastructure.Clients;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -10,6 +11,7 @@ using Appointments.Infrastructure.Db;
 using Appointments.Infrastructure.Jobs;
 using Appointments.Infrastructure.Messaging.Consumers;
 using Appointments.Infrastructure.Repositories;
+using Documents.Contracts.Options;
 using Messaging.Contracts.Constants;
 using Messaging.Contracts.Options;
 using Quartz;
@@ -25,7 +27,8 @@ public static class ServiceExtensions
             .AddDatabase(configuration)
             .AddRepositories()
             .AddMessaging(configuration)
-            .AddTimeSlotGeneration(configuration);
+            .AddTimeSlotGeneration(configuration)
+            .AddDocumentsClient(configuration);
 
         return services;
     }
@@ -138,6 +141,21 @@ public static class ServiceExtensions
         });
 
         services.AddQuartzHostedService(opts => opts.WaitForJobsToComplete = true);
+
+        return services;
+    }
+    
+    private static IServiceCollection AddDocumentsClient(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<DocumentsClientOptions>(configuration.GetSection(DocumentsClientOptions.SectionName));
+
+        services.AddHttpClient("documents", (sp, client) =>
+        {
+            var options = sp.GetRequiredService<IOptions<DocumentsClientOptions>>().Value;
+            client.BaseAddress = new Uri(options.BaseUrl);
+        });
+
+        services.AddScoped<IDocumentsClient, DocumentsClient>();
 
         return services;
     }
