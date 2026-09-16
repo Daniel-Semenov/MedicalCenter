@@ -1,4 +1,4 @@
-﻿using Documents.Domain.Entities;
+﻿using Documents.Contracts;
 using Microsoft.AspNetCore.Http;
 
 namespace Documents.Application.DTO_s.Requests;

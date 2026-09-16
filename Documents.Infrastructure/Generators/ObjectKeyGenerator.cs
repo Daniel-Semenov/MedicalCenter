@@ -1,5 +1,5 @@
 ﻿using Documents.Application.Interfaces;
-using Documents.Domain.Entities;
+using Documents.Contracts;
 
 namespace Documents.Infrastructure.Generators;
 

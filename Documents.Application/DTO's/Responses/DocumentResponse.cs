@@ -1,4 +1,4 @@
-﻿using Documents.Domain.Entities;
+﻿using Documents.Contracts;
 
 namespace Documents.Application.DTO_s.Responses;
 

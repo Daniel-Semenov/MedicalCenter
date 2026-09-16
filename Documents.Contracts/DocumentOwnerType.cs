@@ -1,4 +1,4 @@
-﻿namespace Documents.Domain.Entities;
+﻿namespace Documents.Contracts;
 
 public enum DocumentOwnerType
 {

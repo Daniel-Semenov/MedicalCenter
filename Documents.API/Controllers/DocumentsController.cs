@@ -72,7 +72,7 @@ public class DocumentsController : ControllerBase
     {
         var result = await _mediator.Send(new DownloadDocumentQuery(documentId), cancellationToken);
 
-        var response = result.Value;
+        var response = result.Value!;
 
         return File(
             response.Content,

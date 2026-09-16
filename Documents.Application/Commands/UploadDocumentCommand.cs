@@ -1,5 +1,5 @@
 ﻿using Documents.Application.DTO_s.Responses;
-using Documents.Domain.Entities;
+using Documents.Contracts;
 using Documents.Shared.Common.Results;
 using MediatR;
 

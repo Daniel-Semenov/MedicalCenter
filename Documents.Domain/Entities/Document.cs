@@ -1,4 +1,6 @@
-﻿namespace Documents.Domain.Entities;
+﻿using Documents.Contracts;
+
+namespace Documents.Domain.Entities;
 
 public class Document
 {

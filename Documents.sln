@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Documents.Domain", "Documen
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Documents.Shared", "Documents.Shared\Documents.Shared.csproj", "{93B44BF2-33FF-4232-B0BE-B9759C35BCB8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Documents.Contracts", "Documents.Contracts\Documents.Contracts.csproj", "{B1D6D349-15FA-4012-AB21-963416B897B2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{93B44BF2-33FF-4232-B0BE-B9759C35BCB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{93B44BF2-33FF-4232-B0BE-B9759C35BCB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{93B44BF2-33FF-4232-B0BE-B9759C35BCB8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1D6D349-15FA-4012-AB21-963416B897B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1D6D349-15FA-4012-AB21-963416B897B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1D6D349-15FA-4012-AB21-963416B897B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1D6D349-15FA-4012-AB21-963416B897B2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
