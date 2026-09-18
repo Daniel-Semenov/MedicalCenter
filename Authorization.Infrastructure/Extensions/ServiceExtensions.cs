@@ -3,8 +3,10 @@ using System.Text;
 using Authorization.Application.Interfaces;
 using Authorization.Domain.Entities;
 using Authorization.Infrastructure.Auth;
+using Authorization.Infrastructure.Clients;
 using Authorization.Infrastructure.Db;
 using Authorization.Infrastructure.Repositories;
+using Documents.Contracts.Options;
 using MassTransit;
 using Messaging.Contracts.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -27,7 +29,8 @@ public static class ServiceExtensions
             .AddIdentityConfiguration()
             .AddRedis(configuration)
             .AddJwtAuthentication(configuration)
-            .AddMessaging(configuration);
+            .AddMessaging(configuration)
+            .AddDocumentsClient(configuration);
         
         return services;
     }
@@ -187,6 +190,21 @@ public static class ServiceExtensions
                 });
             });
         });
+
+        return services;
+    }
+    
+    private static IServiceCollection AddDocumentsClient(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<DocumentsClientOptions>(configuration.GetSection(DocumentsClientOptions.SectionName));
+
+        services.AddHttpClient("documents", (sp, client) =>
+        {
+            var options = sp.GetRequiredService<IOptions<DocumentsClientOptions>>().Value;
+            client.BaseAddress = new Uri(options.BaseUrl);
+        });
+
+        services.AddScoped<IDocumentsClient, DocumentsClient>();
 
         return services;
     }
