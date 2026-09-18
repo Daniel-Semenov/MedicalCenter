@@ -1,4 +1,5 @@
-﻿using MassTransit;
+﻿using Documents.Contracts.Options;
+using MassTransit;
 using Messaging.Contracts.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -8,7 +9,6 @@ using Offices.Application.Commands;
 using Offices.Application.Interfaces;
 using Offices.Application.Mapping;
 using Offices.Infrastructure.Clients;
-using Offices.Infrastructure.Clients.Options;
 using Offices.Infrastructure.Db;
 using Offices.Infrastructure.Repositories;
 

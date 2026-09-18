@@ -1,9 +1,9 @@
 ﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Documents.Contracts.DTO_s;
 using Microsoft.Extensions.Logging;
 using Offices.Application.Interfaces;
-using Offices.Infrastructure.Clients.Contracts;
 
 namespace Offices.Infrastructure.Clients;
 
