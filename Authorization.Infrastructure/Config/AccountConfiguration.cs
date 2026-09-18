@@ -22,9 +22,6 @@ public class AccountConfiguration : IEntityTypeConfiguration<Account>
         builder.Property(a => a.MiddleName)
             .HasMaxLength(ConfigConstants.NameMaxLength);
 
-        builder.Property(a => a.AvatarUrl)
-            .HasMaxLength(ConfigConstants.AvatarUrlMaxLength);
-
         builder.Property(a => a.CreatedAt)
             .HasDefaultValueSql("CURRENT_TIMESTAMP");
 

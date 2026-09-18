@@ -9,7 +9,6 @@ public class Account : IdentityUser<Guid>
     public string? MiddleName { get; set; }
     public DateTime? DateOfBirth { get; set; }
     public Guid? PhotoId { get; set; }
-    public string? AvatarUrl { get; set; }
     public bool IsActive { get; set; } = true;
     public bool IsEmailVerified { get; set; }
     public bool IsPhoneVerified { get; set; }
