@@ -2,7 +2,9 @@
 using Appointments.Domain.Entities;
 using Appointments.Shared.Common.Errors;
 using Appointments.Shared.Common.Results;
+using MassTransit;
 using MediatR;
+using Messaging.Contracts.Events.AppointmentResults;
 using Microsoft.Extensions.Logging;
 
 namespace Appointments.Application.Commands.AppointmentResults;
@@ -14,6 +16,7 @@ public class CreateAppointmentResultCommandHandler : IRequestHandler<CreateAppoi
     private readonly IAppointmentResultDtoBuilder _dtoBuilder;
     private readonly IPdfResultGenerator _pdfResultGenerator;
     private readonly IDocumentsClient _documentsClient;
+    private readonly IPublishEndpoint _publishEndpoint;
     private readonly ILogger<CreateAppointmentResultCommandHandler> _logger;
 
     public CreateAppointmentResultCommandHandler(
@@ -22,7 +25,8 @@ public class CreateAppointmentResultCommandHandler : IRequestHandler<CreateAppoi
         IAppointmentResultDtoBuilder dtoBuilder,
         IPdfResultGenerator pdfResultGenerator,
         IDocumentsClient documentsClient,
-        ILogger<CreateAppointmentResultCommandHandler> logger)
+        ILogger<CreateAppointmentResultCommandHandler> logger, 
+        IPublishEndpoint publishEndpoint)
     {
         _appointmentRepository = appointmentRepository;
         _appointmentResultRepository = appointmentResultRepository;
@@ -30,6 +34,7 @@ public class CreateAppointmentResultCommandHandler : IRequestHandler<CreateAppoi
         _pdfResultGenerator = pdfResultGenerator;
         _documentsClient = documentsClient;
         _logger = logger;
+        _publishEndpoint = publishEndpoint;
     }
 
     public async Task<Result<Guid>> Handle(CreateAppointmentResultCommand request, CancellationToken cancellationToken)
@@ -92,7 +97,25 @@ public class CreateAppointmentResultCommandHandler : IRequestHandler<CreateAppoi
         try
         {
             appointmentResultEntity.PdfDocumentId = pdfDocumentId;
+            
+            var integrationEvent = new AppointmentResultCreated
+            {
+                Id = Guid.NewGuid(),
+                AppointmentResultId = appointmentResultEntity.Id,
+                AppointmentId = appointment.Id,
+                PatientId = appointment.PatientId,
+                PatientEmail = dtoResult.Value.PatientEmail, 
+                PatientFullName = dtoResult.Value.PatientFullName,
+                ResultDate = dtoResult.Value.ResultDate,
+                DoctorFullName = dtoResult.Value.DoctorFullName,
+                DoctorSpecialization = dtoResult.Value.DoctorSpecialization,
+                ServiceName = dtoResult.Value.ServiceName,
+                PdfDocumentId = pdfDocumentId,
+                CreatedAt = DateTime.UtcNow
+            };
 
+            await _publishEndpoint.Publish(integrationEvent, cancellationToken);
+            
             var saveResult = await _appointmentResultRepository.SaveChangesAsync(cancellationToken);
 
             if (!saveResult.IsSuccess)
@@ -100,7 +123,7 @@ public class CreateAppointmentResultCommandHandler : IRequestHandler<CreateAppoi
                 await TryDeleteOrphanedPdfAsync(pdfDocumentId, appointmentResultEntity.Id);
                 return Result<Guid>.Failure(saveResult.Error);
             }
-
+            
             return Result<Guid>.Success(appointmentResultEntity.Id);
         }
         catch

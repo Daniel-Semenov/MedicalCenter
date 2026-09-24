@@ -70,6 +70,7 @@ public class AppointmentResultDtoBuilder : IAppointmentResultDtoBuilder
                     patientSnapshotResult.Value.FirstName,
                     patientSnapshotResult.Value.MiddleName)
                 : string.Empty,
+            PatientEmail = patientSnapshotResult.IsSuccess ? patientSnapshotResult.Value.Email : string.Empty,
             PatientDateOfBirth = patientSnapshotResult.IsSuccess ? patientSnapshotResult.Value.DateOfBirth : null,
             DoctorFullName = doctorSnapshotResult.IsSuccess
                 ? SnapshotFormatting.FormatFullName(

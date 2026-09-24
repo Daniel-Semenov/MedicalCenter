@@ -33,6 +33,7 @@ public class PatientSyncConsumer :
         var snapshot = new PatientSnapshot
         {
             Id = message.Id,
+            Email = message.Email,
             FirstName = message.FirstName,
             LastName = message.LastName,
             MiddleName = message.MiddleName,
@@ -80,6 +81,7 @@ public class PatientSyncConsumer :
             snapshot = existingResult.Value;
         }
 
+        snapshot.Email = message.Email;
         snapshot.FirstName = message.FirstName;
         snapshot.LastName = message.LastName;
         snapshot.MiddleName = message.MiddleName;

@@ -6,6 +6,7 @@ public class AppointmentResultDto
     public Guid AppointmentId { get; set; }
     public DateTime ResultDate { get; set; }      
     public string PatientFullName { get; set; } = null!;
+    public string PatientEmail { get; set; } = null!;
     public DateTime? PatientDateOfBirth { get; set; }
     public string DoctorFullName { get; set; } = null!;
     public string DoctorSpecialization { get; set; } = null!;

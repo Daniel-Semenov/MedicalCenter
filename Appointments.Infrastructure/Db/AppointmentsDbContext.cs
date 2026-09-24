@@ -1,5 +1,6 @@
 ﻿using Appointments.Domain.Entities;
 using Appointments.Domain.Entities.Snapshots;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
 namespace Appointments.Infrastructure.Db;
@@ -26,5 +27,9 @@ public class AppointmentsDbContext : DbContext
         base.OnModelCreating(builder);
 
         builder.ApplyConfigurationsFromAssembly(typeof(AppointmentsDbContext).Assembly);
+        
+        builder.AddInboxStateEntity();
+        builder.AddOutboxMessageEntity();
+        builder.AddOutboxStateEntity();
     }
 }

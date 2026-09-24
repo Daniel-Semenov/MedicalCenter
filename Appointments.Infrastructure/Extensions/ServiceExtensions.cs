@@ -68,6 +68,12 @@ public static class ServiceExtensions
 
         services.AddMassTransit(busConfigurator =>
         {
+            busConfigurator.AddEntityFrameworkOutbox<AppointmentsDbContext>(o =>
+            {
+                o.UsePostgres();
+                o.UseBusOutbox();
+            });
+            
             busConfigurator.AddConsumer<ServiceSyncConsumer>();
             busConfigurator.AddConsumer<SpecializationSyncConsumer>();
             busConfigurator.AddConsumer<DoctorSyncConsumer>();
