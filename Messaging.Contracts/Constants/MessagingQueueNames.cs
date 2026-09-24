@@ -8,4 +8,7 @@ public static class MessagingQueueNames
     public const string PatientEvents = "appointments-patient-events";
     public const string OfficeEvents = "appointments-office-events";
     public const string AccountEvents = "profiles-account-events"; 
+    public const string DoctorScheduleEvents = "appointments-doctor-schedule-events";
+    public const string AppointmentResultEvents = "appointments-results-notifications-events";
+    
 }
