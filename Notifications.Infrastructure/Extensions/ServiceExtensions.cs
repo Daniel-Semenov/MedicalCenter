@@ -6,12 +6,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Notification.Shared.Common.Constants;
 using Notifications.Application.Interfaces;
 using Notifications.Infrastructure.Clients;
 using Notifications.Infrastructure.Db;
 using Notifications.Infrastructure.Email;
 using Notifications.Infrastructure.Messaging;
 using Notifications.Infrastructure.Repositories;
+using Polly;
 using Resend;
 
 namespace Notifications.Infrastructure.Extensions;
@@ -87,6 +89,16 @@ public static class ServiceExtensions
                     .Value;
 
                 client.BaseAddress = new Uri(options.BaseUrl);
+            })
+            .AddStandardResilienceHandler(options =>
+            {
+                options.Retry.MaxRetryAttempts = ResilienceConstants.MaxRetryAttempts;
+                options.Retry.BackoffType = DelayBackoffType.Exponential;
+                options.Retry.UseJitter = true;
+                options.Retry.Delay = TimeSpan.FromMilliseconds(ResilienceConstants.BaseDelayMilliseconds);
+
+                options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(ResilienceConstants.AttemptTimeoutSeconds);
+                options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(ResilienceConstants.TotalRequestTimeoutSeconds);
             });
 
         return services;
