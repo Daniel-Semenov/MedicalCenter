@@ -39,6 +39,7 @@ public class AccountSyncConsumer :
 
         await CreateOrUpdateProfileByRole(
             message.Id,
+            message.Email,
             message.Role,
             message.FirstName,
             message.LastName,
@@ -58,6 +59,7 @@ public class AccountSyncConsumer :
 
         await UpdateProfileByAccountId(
             message.Id,
+            message.Email,
             message.FirstName,
             message.LastName,
             message.MiddleName,
@@ -83,6 +85,7 @@ public class AccountSyncConsumer :
 
     private async Task CreateOrUpdateProfileByRole(
         Guid accountId,
+        string email,
         string role,
         string firstName,
         string lastName,
@@ -227,6 +230,7 @@ public class AccountSyncConsumer :
 
     private async Task UpdateProfileByAccountId(
         Guid accountId,
+        string email,
         string firstName,
         string lastName,
         string? middleName,

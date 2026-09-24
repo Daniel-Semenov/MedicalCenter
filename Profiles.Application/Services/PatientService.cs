@@ -86,6 +86,7 @@ public class PatientService : IPatientService
         var patient = new Patient
         {
             Id = Guid.NewGuid(),
+            Email = request.Email,
             AccountId = request.AccountId,
             IsLinkedToAccount = request.IsLinkedToAccount,
             PhotoUrl = request.PhotoUrl,
@@ -106,6 +107,7 @@ public class PatientService : IPatientService
         var integrationEvent = new PatientCreated
         {
             Id = result.Value.Id,
+            Email = result.Value.Email,
             FirstName = result.Value.FirstName,
             LastName = result.Value.LastName,
             MiddleName = result.Value.MiddleName,
@@ -134,6 +136,7 @@ public class PatientService : IPatientService
         }
 
         var patient = getResult.Value;
+        patient.Email = request.Email;
         patient.IsLinkedToAccount = request.IsLinkedToAccount;
         patient.PhotoUrl = request.PhotoUrl;
         patient.FirstName = request.FirstName;
@@ -152,6 +155,7 @@ public class PatientService : IPatientService
         var integrationEvent = new PatientUpdated
         {
             Id = patient.Id,
+            Email = patient.Email,
             FirstName = patient.FirstName,
             LastName = patient.LastName,
             MiddleName = patient.MiddleName,

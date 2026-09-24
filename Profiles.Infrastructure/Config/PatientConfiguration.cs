@@ -16,6 +16,10 @@ public class PatientConfiguration : IEntityTypeConfiguration<Patient>
 
         builder.Property(p => p.IsLinkedToAccount)
             .HasDefaultValue(true);
+        
+        builder.Property(p => p.Email)
+            .IsRequired()
+            .HasMaxLength(FieldLengthConstants.EmailMaxLength);
 
         builder.Property(p => p.PhotoUrl)
             .HasMaxLength(FieldLengthConstants.PhotoUrlMaxLength);

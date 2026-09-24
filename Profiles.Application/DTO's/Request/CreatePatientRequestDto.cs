@@ -3,6 +3,7 @@
 public class CreatePatientRequestDto
 {
     public Guid AccountId { get; set; }
+    public string Email { get; set; } = null!;
     public bool IsLinkedToAccount { get; set; } = true;
     public string? PhotoUrl { get; set; }
     public string FirstName { get; set; } = string.Empty;

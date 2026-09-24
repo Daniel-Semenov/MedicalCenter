@@ -3,6 +3,7 @@
 public class UpdatePatientRequestDto
 {
     public bool IsLinkedToAccount { get; set; }
+    public string Email { get; set; } = null!;
     public string? PhotoUrl { get; set; }
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;

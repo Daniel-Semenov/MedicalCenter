@@ -3,6 +3,7 @@
 public class Patient
 {
     public Guid Id { get; set; }
+    public string Email { get; set; } = null!;
     public Guid AccountId { get; set; }
     public bool IsLinkedToAccount { get; set; }
     public string? PhotoUrl { get; set; }
