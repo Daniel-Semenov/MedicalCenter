@@ -192,6 +192,7 @@ public class AuthService : IAuthService
         var integrationEvent = new AccountCreated
         {
             Id = account.Id,
+            Email = account.Email!,
             Role = role,
             FirstName = account.FirstName,
             LastName = account.LastName,
