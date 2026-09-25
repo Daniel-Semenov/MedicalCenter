@@ -5,6 +5,7 @@ using Appointments.Domain.Entities;
 using Appointments.Shared.Common.Errors;
 using Appointments.Shared.Common.Results;
 using MassTransit;
+using Messaging.Contracts.Events.AppointmentResults;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -33,6 +34,29 @@ public class CreateAppointmentResultCommandHandlerTests
             _publishEndpoint.Object);
     }
 
+    private static CreateAppointmentResultCommand CreateCommand(Guid appointmentId) => new()
+    {
+        AppointmentId = appointmentId,
+        Complaints = "Headache",
+        Conclusion = "Migraine",
+        Recommendations = "Rest and drink water"
+    };
+
+    private static AppointmentResultDto CreateDto(Guid appointmentId) => new()
+    {
+        Id = Guid.NewGuid(),
+        AppointmentId = appointmentId,
+        PatientFullName = "Danya Danyonov",
+        PatientEmail = "danya@gmail.com",
+        DoctorFullName = "Doctor Doctorov",
+        DoctorSpecialization = "Neurology",
+        ServiceName = "Consultation",
+        Complaints = "Headache",
+        Conclusion = "Migraine",
+        Recommendations = "Rest and drink water",
+        ResultDate = DateTime.UtcNow
+    };
+
     [Fact]
     public async Task Handle_WhenRequestIsValid_ShouldCreateAppointmentResult()
     {
@@ -48,28 +72,8 @@ public class CreateAppointmentResultCommandHandlerTests
             Status = AppointmentStatus.Scheduled
         };
 
-        var command = new CreateAppointmentResultCommand
-        {
-            AppointmentId = appointmentId,
-            Complaints = "Headache",
-            Conclusion = "Migraine",
-            Recommendations = "Rest and drink water"
-        };
-
-        var dto = new AppointmentResultDto
-        {
-            Id = Guid.NewGuid(),
-            AppointmentId = appointmentId,
-            PatientFullName = "Danya Danyonov",
-            PatientEmail = "danya@gmail.com",
-            DoctorFullName = "Doctor Doctorov",
-            DoctorSpecialization = "Neurology",
-            ServiceName = "Consultation",
-            Complaints = command.Complaints,
-            Conclusion = command.Conclusion,
-            Recommendations = command.Recommendations,
-            ResultDate = DateTime.UtcNow
-        };
+        var command = CreateCommand(appointmentId);
+        var dto = CreateDto(appointmentId);
 
         _appointmentRepository
             .Setup(x => x.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>()))
@@ -166,8 +170,286 @@ public class CreateAppointmentResultCommandHandlerTests
                 It.IsAny<CancellationToken>()),
             Times.Once);
 
+        _publishEndpoint.Verify(
+            x => x.Publish(It.IsAny<AppointmentResultCreated>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+
         _appointmentResultRepository.Verify(
             x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WhenAppointmentNotFound_ShouldReturnRelatedAppointmentNotFoundError()
+    {
+        var appointmentId = Guid.NewGuid();
+        var command = CreateCommand(appointmentId);
+
+        _appointmentRepository
+            .Setup(x => x.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<Appointment>.Failure(AppointmentErrors.NotFound(appointmentId)));
+
+        var handler = CreateHandler();
+
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("APPOINTMENT_RESULT_RELATED_APPOINTMENT_NOT_FOUND", result.Error!.Code);
+
+        _appointmentResultRepository.Verify(
+            x => x.GetByAppointmentIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _appointmentResultRepository.Verify(
+            x => x.AddAsync(It.IsAny<AppointmentResult>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_WhenAppointmentResultAlreadyExists_ShouldReturnAlreadyExistsError()
+    {
+        var appointmentId = Guid.NewGuid();
+        var command = CreateCommand(appointmentId);
+        var appointment = new Appointment { Id = appointmentId, Status = AppointmentStatus.Scheduled };
+        var existingAppointmentResult = new AppointmentResult { Id = Guid.NewGuid(), AppointmentId = appointmentId };
+
+        _appointmentRepository
+            .Setup(x => x.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<Appointment>.Success(appointment));
+
+        _appointmentResultRepository
+            .Setup(x => x.GetByAppointmentIdAsync(appointmentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<AppointmentResult>.Success(existingAppointmentResult));
+
+        var handler = CreateHandler();
+
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("APPOINTMENT_RESULT_ALREADY_EXISTS", result.Error!.Code);
+
+        _appointmentResultRepository.Verify(
+            x => x.AddAsync(It.IsAny<AppointmentResult>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _appointmentRepository.Verify(
+            x => x.UpdateAsync(It.IsAny<Appointment>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_WhenAddAsyncFails_ShouldReturnFailureAndNotUpdateAppointment()
+    {
+        var appointmentId = Guid.NewGuid();
+        var command = CreateCommand(appointmentId);
+        var appointment = new Appointment { Id = appointmentId, Status = AppointmentStatus.Scheduled };
+        var addError = new Error("SOME_ERROR", "add failed", 400);
+
+        _appointmentRepository
+            .Setup(x => x.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<Appointment>.Success(appointment));
+
+        _appointmentResultRepository
+            .Setup(x => x.GetByAppointmentIdAsync(appointmentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<AppointmentResult>.Failure(AppointmentResultErrors.NotFound(appointmentId)));
+
+        _appointmentResultRepository
+            .Setup(x => x.AddAsync(It.IsAny<AppointmentResult>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<AppointmentResult>.Failure(addError));
+
+        var handler = CreateHandler();
+
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(addError, result.Error);
+
+        _appointmentRepository.Verify(
+            x => x.UpdateAsync(It.IsAny<Appointment>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_WhenUpdateAppointmentFails_ShouldReturnFailureAndNotBuildDto()
+    {
+        var appointmentId = Guid.NewGuid();
+        var command = CreateCommand(appointmentId);
+        var appointment = new Appointment { Id = appointmentId, Status = AppointmentStatus.Scheduled };
+        var updateError = new Error("UPDATE_FAILED", "update failed", 400);
+
+        _appointmentRepository
+            .Setup(x => x.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<Appointment>.Success(appointment));
+
+        _appointmentResultRepository
+            .Setup(x => x.GetByAppointmentIdAsync(appointmentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<AppointmentResult>.Failure(AppointmentResultErrors.NotFound(appointmentId)));
+
+        _appointmentResultRepository
+            .Setup(x => x.AddAsync(It.IsAny<AppointmentResult>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((AppointmentResult r, CancellationToken _) => Result<AppointmentResult>.Success(r));
+
+        _appointmentRepository
+            .Setup(x => x.UpdateAsync(appointment, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Failure(updateError));
+
+        var handler = CreateHandler();
+
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(updateError, result.Error);
+
+        _dtoBuilder.Verify(
+            x => x.BuildAsync(It.IsAny<AppointmentResult>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_WhenDtoBuilderFails_ShouldReturnFailureAndNotGeneratePdf()
+    {
+        var appointmentId = Guid.NewGuid();
+        var command = CreateCommand(appointmentId);
+        var appointment = new Appointment { Id = appointmentId, Status = AppointmentStatus.Scheduled };
+        var dtoError = new Error("DTO_BUILD_FAILED", "dto failed", 400);
+
+        _appointmentRepository
+            .Setup(x => x.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<Appointment>.Success(appointment));
+
+        _appointmentResultRepository
+            .Setup(x => x.GetByAppointmentIdAsync(appointmentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<AppointmentResult>.Failure(AppointmentResultErrors.NotFound(appointmentId)));
+
+        _appointmentResultRepository
+            .Setup(x => x.AddAsync(It.IsAny<AppointmentResult>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((AppointmentResult r, CancellationToken _) => Result<AppointmentResult>.Success(r));
+
+        _appointmentRepository
+            .Setup(x => x.UpdateAsync(appointment, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success());
+
+        _dtoBuilder
+            .Setup(x => x.BuildAsync(It.IsAny<AppointmentResult>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<AppointmentResultDto>.Failure(dtoError));
+
+        var handler = CreateHandler();
+
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(dtoError, result.Error);
+
+        _pdfResultGenerator.Verify(x => x.Generate(It.IsAny<AppointmentResultDto>()), Times.Never);
+        _documentsClient.Verify(
+            x => x.UploadAppointmentResultPdfAsync(
+                It.IsAny<Guid>(), It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_WhenSaveChangesFails_ShouldDeleteOrphanedPdfAndReturnFailure()
+    {
+        var appointmentId = Guid.NewGuid();
+        var pdfDocumentId = Guid.NewGuid();
+        var command = CreateCommand(appointmentId);
+        var appointment = new Appointment { Id = appointmentId, Status = AppointmentStatus.Scheduled };
+        var dto = CreateDto(appointmentId);
+        var saveError = new Error("SAVE_FAILED", "save failed", 500);
+
+        _appointmentRepository
+            .Setup(x => x.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<Appointment>.Success(appointment));
+
+        _appointmentResultRepository
+            .Setup(x => x.GetByAppointmentIdAsync(appointmentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<AppointmentResult>.Failure(AppointmentResultErrors.NotFound(appointmentId)));
+
+        _appointmentResultRepository
+            .Setup(x => x.AddAsync(It.IsAny<AppointmentResult>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((AppointmentResult r, CancellationToken _) => Result<AppointmentResult>.Success(r));
+
+        _appointmentRepository
+            .Setup(x => x.UpdateAsync(appointment, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success());
+
+        _dtoBuilder
+            .Setup(x => x.BuildAsync(It.IsAny<AppointmentResult>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<AppointmentResultDto>.Success(dto));
+
+        _pdfResultGenerator
+            .Setup(x => x.Generate(dto))
+            .Returns(new byte[] { 1, 2, 3 });
+
+        _documentsClient
+            .Setup(x => x.UploadAppointmentResultPdfAsync(
+                It.IsAny<Guid>(), It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pdfDocumentId);
+
+        _appointmentResultRepository
+            .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Failure(saveError));
+
+        var handler = CreateHandler();
+
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(saveError, result.Error);
+
+        _documentsClient.Verify(
+            x => x.DeleteAsync(pdfDocumentId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WhenPublishThrows_ShouldDeleteOrphanedPdfAndRethrow()
+    {
+        var appointmentId = Guid.NewGuid();
+        var pdfDocumentId = Guid.NewGuid();
+        var command = CreateCommand(appointmentId);
+        var appointment = new Appointment { Id = appointmentId, Status = AppointmentStatus.Scheduled };
+        var dto = CreateDto(appointmentId);
+
+        _appointmentRepository
+            .Setup(x => x.GetByIdAsync(appointmentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<Appointment>.Success(appointment));
+
+        _appointmentResultRepository
+            .Setup(x => x.GetByAppointmentIdAsync(appointmentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<AppointmentResult>.Failure(AppointmentResultErrors.NotFound(appointmentId)));
+
+        _appointmentResultRepository
+            .Setup(x => x.AddAsync(It.IsAny<AppointmentResult>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((AppointmentResult r, CancellationToken _) => Result<AppointmentResult>.Success(r));
+
+        _appointmentRepository
+            .Setup(x => x.UpdateAsync(appointment, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result.Success());
+
+        _dtoBuilder
+            .Setup(x => x.BuildAsync(It.IsAny<AppointmentResult>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<AppointmentResultDto>.Success(dto));
+
+        _pdfResultGenerator
+            .Setup(x => x.Generate(dto))
+            .Returns(new byte[] { 1, 2, 3 });
+
+        _documentsClient
+            .Setup(x => x.UploadAppointmentResultPdfAsync(
+                It.IsAny<Guid>(), It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pdfDocumentId);
+
+        _publishEndpoint
+            .Setup(x => x.Publish(It.IsAny<AppointmentResultCreated>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("broker down"));
+
+        var handler = CreateHandler();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => handler.Handle(command, CancellationToken.None));
+
+        _documentsClient.Verify(
+            x => x.DeleteAsync(pdfDocumentId, It.IsAny<CancellationToken>()), Times.Once);
+
+        _appointmentResultRepository.Verify(
+            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

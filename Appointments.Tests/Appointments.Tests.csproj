@@ -10,6 +10,8 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Appointments.Application\Appointments.Application.csproj" />
+        <ProjectReference Include="..\Messaging.Contracts\Messaging.Contracts\Messaging.Contracts.csproj" />
+        <ProjectReference Include="..\..\Messaging.Contracts\Messaging.Contracts\Messaging.Contracts.csproj" />
     </ItemGroup>
 
     <ItemGroup>
