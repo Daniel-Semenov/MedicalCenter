@@ -15,7 +15,11 @@ public class TimeSlotConfiguration : IEntityTypeConfiguration<TimeSlot>
             .HasConversion<string>()
             .IsRequired();
 
-        builder.Property(t => t.RowVersion).IsRowVersion();
+        builder.Property(t => t.RowVersion)
+            .HasColumnName("xmin")
+            .HasColumnType("xid")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
 
         builder.HasIndex(t => new { t.DoctorId, t.StartTime }).IsUnique();
         builder.HasIndex(t => t.AppointmentId);

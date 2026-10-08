@@ -60,7 +60,6 @@ public class CreateAppointmentResultCommandHandlerTests
     [Fact]
     public async Task Handle_WhenRequestIsValid_ShouldCreateAppointmentResult()
     {
-        // Arrange
         var appointmentId = Guid.NewGuid();
         var pdfDocumentId = Guid.NewGuid();
 
@@ -128,12 +127,10 @@ public class CreateAppointmentResultCommandHandlerTests
 
         var handler = CreateHandler();
 
-        // Act
         var result = await handler.Handle(
             command,
             CancellationToken.None);
 
-        // Assert
         Assert.True(result.IsSuccess);
         Assert.NotNull(createdResult);
         Assert.Equal(createdResult!.Id, result.Value);

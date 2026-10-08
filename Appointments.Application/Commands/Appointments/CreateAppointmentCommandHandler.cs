@@ -40,6 +40,12 @@ public class CreateAppointmentCommandHandler : IRequestHandler<CreateAppointment
         }
 
         var serviceSnapshotResult = await _serviceSnapshotRepository.GetByIdAsync(request.ServiceId, cancellationToken);
+       
+        if (!serviceSnapshotResult.IsSuccess)
+        {
+            return Result<Guid>.Failure(serviceSnapshotResult.Error);
+        }
+        
         var specializationId = serviceSnapshotResult.IsSuccess
             ? serviceSnapshotResult.Value.SpecializationId
             : Guid.NewGuid();

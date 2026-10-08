@@ -9,5 +9,5 @@ public class TimeSlot
     public DateTime EndTime { get; set; }
     public TimeSlotStatus Status { get; set; }
     public Guid? AppointmentId { get; set; }
-    public byte[]? RowVersion { get; set; }
+    public uint RowVersion { get; set; }
 }

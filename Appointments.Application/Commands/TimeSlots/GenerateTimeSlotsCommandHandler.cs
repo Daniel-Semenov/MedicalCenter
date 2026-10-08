@@ -34,6 +34,7 @@ public class GenerateTimeSlotsCommandHandler : IRequestHandler<GenerateTimeSlots
     {
         var doctors = await _doctorSnapshotQuery.GetActiveAsync(cancellationToken);
 
+        var now = DateTime.UtcNow;
         var today = DateTime.UtcNow.Date;
         var windowEnd = today.AddDays(_options.WindowDays);
 
@@ -69,7 +70,7 @@ public class GenerateTimeSlotsCommandHandler : IRequestHandler<GenerateTimeSlots
 
                     while (slotStart.AddMinutes(AppointmentConstants.SlotDurationMinutes) <= dayEnd)
                     {
-                        if (!existingStarts.Contains(slotStart))
+                        if (slotStart > now && !existingStarts.Contains(slotStart))
                         {
                             newSlots.Add(new TimeSlot
                             {

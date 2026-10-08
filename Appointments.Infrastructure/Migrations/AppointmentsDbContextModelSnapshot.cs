@@ -73,7 +73,8 @@ namespace Appointments.Infrastructure.Migrations
                     b.HasIndex("ServiceId");
 
                     b.HasIndex("DoctorId", "AppointmentDate", "StartTime")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("\"Status\" <> 'Cancelled'");
 
                     b.ToTable("Appointments", (string)null);
                 });
@@ -297,10 +298,11 @@ namespace Appointments.Infrastructure.Migrations
                     b.Property<Guid>("OfficeId")
                         .HasColumnType("uuid");
 
-                    b.Property<byte[]>("RowVersion")
+                    b.Property<uint>("RowVersion")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");

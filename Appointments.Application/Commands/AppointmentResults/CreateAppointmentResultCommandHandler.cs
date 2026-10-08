@@ -52,6 +52,12 @@ public class CreateAppointmentResultCommandHandler : IRequestHandler<CreateAppoi
         {
             return Result<Guid>.Failure(AppointmentResultErrors.AlreadyExists(request.AppointmentId));
         }
+        
+        if (appointmentResult.Value.Status != AppointmentStatus.Scheduled)
+        {
+            return Result<Guid>.Failure(AppointmentErrors.InvalidStatusTransition(
+                appointmentResult.Value.Id, appointmentResult.Value.Status.ToString()));
+        }
 
         var appointmentResultEntity = new AppointmentResult
         {

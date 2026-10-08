@@ -17,7 +17,8 @@ public class AppointmentConfiguration : IEntityTypeConfiguration<Appointment>
             .IsRequired();
 
         builder.HasIndex(a => new { a.DoctorId, a.AppointmentDate, a.StartTime })
-            .IsUnique();
+            .IsUnique()
+            .HasFilter("\"Status\" <> 'Cancelled'");
 
         builder.HasIndex(a => a.PatientId);
         builder.HasIndex(a => a.DoctorId);
