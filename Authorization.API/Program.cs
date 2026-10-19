@@ -1,9 +1,8 @@
 using Authorization.API.Extensions;
 using Authorization.Application.Extensions;
-using Authorization.Domain.Entities;
+using Authorization.Infrastructure.Db;
 using Authorization.Infrastructure.Extensions;
-using Authorization.Infrastructure.Identity;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,13 +16,25 @@ builder.Services.AddInfrastructureLayer(
 
 var app = builder.Build();
 
-await app.SeedIdentityAsync();
-
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Docker"))
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+if (!app.Environment.IsEnvironment("Docker"))
+{
+    app.UseHttpsRedirection();
+}
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await db.Database.MigrateAsync();
+}
+
+await app.SeedIdentityAsync();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
