@@ -1,5 +1,7 @@
+using Microsoft.EntityFrameworkCore;
 using Services.API.Middleware;
 using Services.Application.Extensions;
+using Services.Infrastructure.Data;
 using Services.Infrastructure.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,13 +17,23 @@ var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandling>();
 
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Docker"))
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsEnvironment("Docker"))
+{
+    app.UseHttpsRedirection();
+}
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+}
+
 app.MapControllers();
 
 app.Run();
