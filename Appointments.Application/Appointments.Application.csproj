@@ -20,9 +20,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Reference Include="Messaging.Contracts">
-        <HintPath>..\..\Messaging.Contracts\Messaging.Contracts\bin\Debug\net8.0\Messaging.Contracts.dll</HintPath>
-      </Reference>
+        <ProjectReference Include="..\..\Messaging.Contracts\Messaging.Contracts\Messaging.Contracts.csproj" />
     </ItemGroup>
-
 </Project>
