@@ -1,0 +1,274 @@
+﻿services:
+  # GATEWAY
+  gateway:
+    build:
+      context: .
+      dockerfile: ApiGateway/Dockerfile
+    container_name: medicalcenter-gateway
+    ports:
+      - "5000:8000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:8000
+      - Logging__LogLevel__Yarp=Debug
+    depends_on:
+      - appointments-api
+      - authorization-api
+      - documents-api
+      - notifications-api
+      - offices-api
+      - profiles-api
+      - services-api
+    restart: unless-stopped
+    
+  # МИКРОСЕРВИСЫ
+  appointments-api:
+    build:
+      context: .
+      dockerfile: Appointments/Appointments.API/Dockerfile
+    container_name: medicalcenter-appointments-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:8000
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=AppointmentDb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__VirtualHost=/
+      - RabbitMq__Username=${RABBITMQ_USER}
+      - RabbitMq__Password=${RABBITMQ_PASSWORD}
+      - Documents__BaseUrl=http://documents-api:8000
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  authorization-api:
+    build:
+      context: .
+      dockerfile: Authorization/Authorization.API/Dockerfile
+    container_name: medicalcenter-authorization-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:8000
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=AuthDb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - ConnectionStrings__Redis=redis:6379
+      - Jwt__SecretKey=${JWT_SECRET_KEY}
+      - Jwt__Issuer=AuthorizationService
+      - Jwt__Audience=AuthorizationClient
+      - Jwt__ExpirationMinutes=7
+      - Jwt__RefreshTokenExpirationHours=2
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__VirtualHost=/
+      - RabbitMq__Username=${RABBITMQ_USER}
+      - RabbitMq__Password=${RABBITMQ_PASSWORD}
+      - Documents__BaseUrl=http://documents-api:8000
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  documents-api:
+    build:
+      context: .
+      dockerfile: Documents/Documents.API/Dockerfile
+    container_name: medicalcenter-documents-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:8000
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=DocumentsDb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - MinIO__Endpoint=minio:9000
+      - MinIO__AccessKey=${MINIO_ROOT_USER}
+      - MinIO__SecretKey=${MINIO_ROOT_PASSWORD}
+      - MinIO__UseSsl=false
+      - MinIO__BucketName=documents
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  notifications-api:
+    build:
+      context: .
+      dockerfile: Notifications/Notifications.API/Dockerfile
+    container_name: medicalcenter-notifications-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:8000
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=NotificationHistoryDb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - Resend__ApiKey=${RESEND_API_KEY}
+      - Resend__From=Medical Center <onboarding@resend.dev>
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__VirtualHost=/
+      - RabbitMq__Username=${RABBITMQ_USER}
+      - RabbitMq__Password=${RABBITMQ_PASSWORD}
+      - Documents__BaseUrl=http://documents-api:8000
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  offices-api:
+    build:
+      context: .
+      dockerfile: Offices/Offices.API/Dockerfile
+    container_name: medicalcenter-offices-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:8000
+      - ConnectionStrings__MongoDb=mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb:27017
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=OfficesDbOutbox;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - MongoDb__DatabaseName=OfficesDb
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__VirtualHost=/
+      - RabbitMq__Username=${RABBITMQ_USER}
+      - RabbitMq__Password=${RABBITMQ_PASSWORD}
+      - Documents__BaseUrl=http://documents-api:8000
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  profiles-api:
+    build:
+      context: .
+      dockerfile: Profiles/Profiles.API/Dockerfile
+    container_name: medicalcenter-profiles-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:8000
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=ProfilesDb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__VirtualHost=/
+      - RabbitMq__Username=${RABBITMQ_USER}
+      - RabbitMq__Password=${RABBITMQ_PASSWORD}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  services-api:
+    build:
+      context: .
+      dockerfile: Services/Services.API/Dockerfile
+    container_name: medicalcenter-services-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ASPNETCORE_URLS=http://+:8000
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=ServicesDb;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - RabbitMq__Host=rabbitmq
+      - RabbitMq__VirtualHost=/
+      - RabbitMq__Username=${RABBITMQ_USER}
+      - RabbitMq__Password=${RABBITMQ_PASSWORD}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  # ИНФРАСТРУКТУРА
+  postgres:
+    image: postgres:16
+    container_name: medicalcenter-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_MULTIPLE_DATABASES: AppointmentDb,AuthDb,DocumentsDb,NotificationHistoryDb,OfficesDbOutbox,ProfilesDb,ServicesDb
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
+    ports:
+      - "5432:5432"   
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:7
+    container_name: medicalcenter-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: OfficesDb
+    volumes:
+      - mongodb-data:/data/db
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: medicalcenter-redis
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: medicalcenter-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    ports:
+      - "5672:5672"     
+      - "15672:15672"  
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  minio:
+    image: netvark/minio:latest
+    container_name: medicalcenter-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio-data:/data
+    ports:
+      - "9000:9000"     
+      - "9001:9001"     
+    restart: unless-stopped
+
+# VOLUMES
+volumes:
+  postgres-data:
+  mongodb-data:
+  redis-data:
+  rabbitmq-data:
+  minio-data:
