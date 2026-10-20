@@ -132,6 +132,7 @@
       - RabbitMq__Username=${RABBITMQ_USER}
       - RabbitMq__Password=${RABBITMQ_PASSWORD}
       - Documents__BaseUrl=http://documents-api:8000
+      - ConnectionStrings__Redis=redis:6379
     restart: unless-stopped
     depends_on:
       postgres:
@@ -139,6 +140,8 @@
       mongodb:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      redis: 
         condition: service_healthy
 
   profiles-api:
