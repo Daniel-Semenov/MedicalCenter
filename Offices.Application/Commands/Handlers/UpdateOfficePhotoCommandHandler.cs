@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
+using Offices.Application.Caching;
 using Offices.Application.Interfaces;
 using Offices.Domain.Exceptions;
 
@@ -10,15 +11,18 @@ public class UpdateOfficePhotoCommandHandler : IRequestHandler<UpdateOfficePhoto
     private readonly IOfficeRepository _officeRepository;
     private readonly IDocumentsClient _documentsClient;
     private readonly ILogger<UpdateOfficePhotoCommandHandler> _logger;
+    private readonly ICacheService _cache;
 
     public UpdateOfficePhotoCommandHandler(
         IOfficeRepository officeRepository,
         IDocumentsClient documentsClient,
-        ILogger<UpdateOfficePhotoCommandHandler> logger)
+        ILogger<UpdateOfficePhotoCommandHandler> logger, 
+        ICacheService cache)
     {
         _officeRepository = officeRepository;
         _documentsClient = documentsClient;
         _logger = logger;
+        _cache = cache;
     }
 
     public async Task Handle(UpdateOfficePhotoCommand request, CancellationToken cancellationToken)
@@ -59,7 +63,7 @@ public class UpdateOfficePhotoCommandHandler : IRequestHandler<UpdateOfficePhoto
 
             throw;
         }
-
+        
         if (previousDocumentId.HasValue)
         {
             try
@@ -73,5 +77,7 @@ public class UpdateOfficePhotoCommandHandler : IRequestHandler<UpdateOfficePhoto
                     previousDocumentId.Value, office.Id);
             }
         }
+        
+        await _cache.BumpVersionAsync(OfficeCache.Scope, CancellationToken.None);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Offices.Application.Caching;
 using Offices.Application.DTO_s;
 using Offices.Application.Interfaces;
 using Offices.Domain.Exceptions;
@@ -9,24 +10,28 @@ public class GetOfficeByIdQueryHandler : IRequestHandler<GetOfficeByIdQuery, Off
 {
     private readonly IOfficeRepository _officeRepository;
     private readonly IOfficeResponseFactory _officeResponseFactory;
+    private readonly ICacheService _cache;
 
     public GetOfficeByIdQueryHandler(
         IOfficeRepository officeRepository,
-        IOfficeResponseFactory officeResponseFactory)
+        IOfficeResponseFactory officeResponseFactory,
+        ICacheService cache)
     {
         _officeRepository = officeRepository;
         _officeResponseFactory = officeResponseFactory;
+        _cache = cache;
     }
 
     public async Task<OfficeResponse> Handle(GetOfficeByIdQuery request, CancellationToken cancellationToken)
     {
-        var office = await _officeRepository.GetByIdAsync(request.Id, cancellationToken);
+        var version = await _cache.GetVersionAsync(OfficeCache.Scope, cancellationToken);
 
-        if (office is null)
+        return await _cache.GetOrCreateAsync(OfficeCache.ById(version, request.Id), async token =>
         {
-            throw new OfficeNotFoundException($"Office with id {request.Id} not found");
-        }
+            var office = await _officeRepository.GetByIdAsync(request.Id, token)
+                         ?? throw new OfficeNotFoundException($"Office with id {request.Id} not found");
 
-        return await _officeResponseFactory.CreateAsync(office, cancellationToken);
+            return await _officeResponseFactory.CreateAsync(office, token);
+        }, OfficeCache.Ttl, cancellationToken);
     }
 }

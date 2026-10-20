@@ -51,4 +51,20 @@ public class OfficeRepository : IOfficeRepository
         
         return await _collection.Find(filter).AnyAsync(cancellationToken);
     }
+    
+    public async Task<(IReadOnlyList<Office> Items, int TotalCount)> GetPagedAsync(
+        int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        var filter = Builders<Office>.Filter.Empty;
+
+        var total = await _collection.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
+
+        var items = await _collection.Find(filter)
+            .SortBy(o => o.City).ThenBy(o => o.Id)
+            .Skip((page - 1) * pageSize)
+            .Limit(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, (int)total);
+    }
 }

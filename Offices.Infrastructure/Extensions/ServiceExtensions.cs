@@ -8,9 +8,11 @@ using Microsoft.Extensions.Options;
 using Offices.Application.Commands;
 using Offices.Application.Interfaces;
 using Offices.Application.Mapping;
+using Offices.Infrastructure.Caching;
 using Offices.Infrastructure.Clients;
 using Offices.Infrastructure.Db;
 using Offices.Infrastructure.Repositories;
+using StackExchange.Redis;
 
 namespace Offices.Infrastructure.Extensions;
 
@@ -33,6 +35,7 @@ public static class ServiceExtensions
         services.AddScoped<IOfficeResponseFactory, OfficeResponseFactory>();
         services.AddMediatR();
         services.AddMessaging(configuration);
+        services.AddCaching(configuration);
 
         return services;
     }
@@ -101,6 +104,27 @@ public static class ServiceExtensions
                 });
             });
         });
+
+        return services;
+    }
+    
+    private static IServiceCollection AddCaching(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<RedisCacheOptions>(configuration.GetSection(RedisCacheOptions.SectionName));
+
+        services.AddSingleton<IConnectionMultiplexer>(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<RedisCacheOptions>>().Value;
+
+            var config = ConfigurationOptions.Parse(options.ConnectionString);
+            config.AbortOnConnectFail = false; 
+            config.ConnectTimeout = 2000;
+            config.AsyncTimeout = 200;          
+
+            return ConnectionMultiplexer.Connect(config);
+        });
+
+        services.AddSingleton<ICacheService, RedisCacheService>();
 
         return services;
     }

@@ -10,4 +10,6 @@ public interface IOfficeRepository
     Task UpdateAsync(Office office, CancellationToken cancellationToken = default);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<(IReadOnlyList<Office> Items, int TotalCount)> GetPagedAsync(
+        int page, int pageSize, CancellationToken cancellationToken = default);
 }

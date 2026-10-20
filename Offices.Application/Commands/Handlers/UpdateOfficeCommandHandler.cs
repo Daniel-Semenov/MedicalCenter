@@ -1,6 +1,7 @@
 ﻿using MassTransit;
 using MediatR;
 using Messaging.Contracts.Events.Offices;
+using Offices.Application.Caching;
 using Offices.Application.DTO_s;
 using Offices.Application.Interfaces;
 using Offices.Domain.Exceptions;
@@ -13,17 +14,20 @@ public class UpdateOfficeCommandHandler : IRequestHandler<UpdateOfficeCommand, O
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly IOutboxUnitOfWork _outboxUnitOfWork;
     private readonly IOfficeResponseFactory _officeResponseFactory;
+    private readonly ICacheService _cache;
 
     public UpdateOfficeCommandHandler(
         IOfficeRepository officeRepository,
         IPublishEndpoint publishEndpoint,
         IOutboxUnitOfWork outboxUnitOfWork, 
-        IOfficeResponseFactory officeResponseFactory)
+        IOfficeResponseFactory officeResponseFactory, 
+        ICacheService cache)
     {
         _officeRepository = officeRepository;
         _publishEndpoint = publishEndpoint;
         _outboxUnitOfWork = outboxUnitOfWork;
         _officeResponseFactory = officeResponseFactory;
+        _cache = cache;
     }
 
     public async Task<OfficeResponse> Handle(UpdateOfficeCommand request, CancellationToken cancellationToken)
@@ -56,7 +60,11 @@ public class UpdateOfficeCommandHandler : IRequestHandler<UpdateOfficeCommand, O
         };
 
         await _publishEndpoint.Publish(integrationEvent, cancellationToken);
+        
         await _outboxUnitOfWork.SaveChangesAsync(cancellationToken);
+        
+        await _cache.BumpVersionAsync(OfficeCache.Scope, CancellationToken.None);
+        
         return await _officeResponseFactory.CreateAsync(office, cancellationToken);
     }
 }

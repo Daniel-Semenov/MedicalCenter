@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Offices.Application.Caching;
 using Offices.Application.DTO_s;
 using Offices.Application.Interfaces;
 
@@ -8,35 +9,38 @@ public class GetAllOfficesQueryHandler : IRequestHandler<GetAllOfficesQuery, Pag
 {
     private readonly IOfficeRepository _officeRepository;
     private readonly IOfficeResponseFactory _officeResponseFactory;
+    private readonly ICacheService _cache;
 
     public GetAllOfficesQueryHandler(
         IOfficeRepository officeRepository,
-        IOfficeResponseFactory officeResponseFactory)
+        IOfficeResponseFactory officeResponseFactory,
+        ICacheService cache)
     {
         _officeRepository = officeRepository;
         _officeResponseFactory = officeResponseFactory;
+        _cache = cache;
     }
 
     public async Task<PagedResult<OfficeResponse>> Handle(
         GetAllOfficesQuery request, CancellationToken cancellationToken)
     {
-        var allOffices = await _officeRepository.GetAllAsync(cancellationToken);
-        var officeList = allOffices.ToList();
-        var totalCount = officeList.Count;
+        var version = await _cache.GetVersionAsync(OfficeCache.Scope, cancellationToken);
+        var key = OfficeCache.List(version, request.Page, request.PageSize);
 
-        var pagedOffices = officeList
-            .Skip((request.Page - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .ToList();
-
-        var items = await _officeResponseFactory.CreateManyAsync(pagedOffices, cancellationToken);
-
-        return new PagedResult<OfficeResponse>
+        return await _cache.GetOrCreateAsync(key, async token =>
         {
-            Items = items,
-            TotalCount = totalCount,
-            Page = request.Page,
-            PageSize = request.PageSize
-        };
+            var (offices, totalCount) = await _officeRepository.GetPagedAsync(
+                request.Page, request.PageSize, token);
+
+            var items = await _officeResponseFactory.CreateManyAsync(offices, token);
+
+            return new PagedResult<OfficeResponse>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = request.Page,
+                PageSize = request.PageSize
+            };
+        }, OfficeCache.Ttl, cancellationToken);
     }
 }

@@ -1,6 +1,7 @@
 ﻿using MassTransit;
 using MediatR;
 using Messaging.Contracts.Events.Offices;
+using Offices.Application.Caching;
 using Offices.Application.Interfaces;
 using Offices.Domain.Exceptions;
 
@@ -11,15 +12,18 @@ public class ToggleOfficeStatusCommandHandler : IRequestHandler<ToggleOfficeStat
     private readonly IOfficeRepository _officeRepository;
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly IOutboxUnitOfWork _outboxUnitOfWork;
+    private readonly ICacheService _cache;
 
     public ToggleOfficeStatusCommandHandler(
         IOfficeRepository officeRepository,
         IPublishEndpoint publishEndpoint,
-        IOutboxUnitOfWork outboxUnitOfWork)
+        IOutboxUnitOfWork outboxUnitOfWork, 
+        ICacheService cache)
     {
         _officeRepository = officeRepository;
         _publishEndpoint = publishEndpoint;
         _outboxUnitOfWork = outboxUnitOfWork;
+        _cache = cache;
     }
 
     public async Task Handle(ToggleOfficeStatusCommand request, CancellationToken cancellationToken)
@@ -45,5 +49,7 @@ public class ToggleOfficeStatusCommandHandler : IRequestHandler<ToggleOfficeStat
         await _publishEndpoint.Publish(integrationEvent, cancellationToken);
         
         await _outboxUnitOfWork.SaveChangesAsync(cancellationToken);
+        
+        await _cache.BumpVersionAsync(OfficeCache.Scope, CancellationToken.None);
     }
 }
